@@ -11,16 +11,34 @@ declare global {
         height?: string | number;
       }) => { embed: (el: HTMLElement) => void };
     };
-    L: {
-      map: (el: HTMLElement, opts: { center: [number, number]; zoom: number; zoomControl?: boolean }) => LeafletMap;
-      tileLayer: (url: string, opts: { attribution: string; maxZoom: number }) => { addTo: (map: LeafletMap) => void };
-      marker: (latlng: [number, number]) => { addTo: (map: LeafletMap) => void };
+    kakao: {
+      maps: {
+        load: (callback: () => void) => void;
+        Map: new (container: HTMLElement, options: object) => KakaoMapInstance;
+        LatLng: new (lat: number, lng: number) => object;
+        Marker: new (options: object) => KakaoMarker;
+        services: {
+          Geocoder: new () => KakaoGeocoder;
+          Status: { OK: string };
+        };
+      };
     };
   }
 }
 
-interface LeafletMap {
-  setView: (latlng: [number, number], zoom: number) => void;
+interface KakaoMapInstance {
+  setCenter: (latlng: object) => void;
+}
+
+interface KakaoMarker {
+  setMap: (map: KakaoMapInstance | null) => void;
+}
+
+interface KakaoGeocoder {
+  addressSearch: (
+    address: string,
+    callback: (result: Array<{ x: string; y: string }>, status: string) => void
+  ) => void;
 }
 
 interface DaumPostcodeResult {
@@ -67,62 +85,65 @@ export default function KakaoAddressSearch({ onComplete }: Props) {
   );
 
   const mapContainerRef = useRef<HTMLDivElement>(null);
-  const mapRef = useRef<LeafletMap | null>(null);
+  const mapRef = useRef<KakaoMapInstance | null>(null);
+  const markerRef = useRef<KakaoMarker | null>(null);
 
-  // Leaflet + Nominatim 지오코딩
+  // Kakao Maps 지오코딩 + 지도 표시
   useEffect(() => {
     if (step !== "confirm" || !pending || !mapContainerRef.current) return;
 
-    const initMap = async () => {
-      if (!mapContainerRef.current) return;
+    const initMap = () => {
+      if (!mapContainerRef.current || !window.kakao?.maps) return;
 
-      // Nominatim으로 좌표 변환
-      const res = await fetch(
-        `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(pending.address)}&format=json&limit=1&accept-language=ko`,
-        { headers: { "Accept-Language": "ko" } }
-      );
-      const data = await res.json();
-      if (!data[0] || !mapContainerRef.current) return;
+      const geocoder = new window.kakao.maps.services.Geocoder();
+      geocoder.addressSearch(pending.address, (result, status) => {
+        if (status !== window.kakao.maps.services.Status.OK || !result[0]) return;
 
-      const lat = parseFloat(data[0].lat);
-      const lng = parseFloat(data[0].lon);
+        const lat = parseFloat(result[0].y);
+        const lng = parseFloat(result[0].x);
+        const latlng = new window.kakao.maps.LatLng(lat, lng);
 
-      if (!mapRef.current) {
-        mapRef.current = window.L.map(mapContainerRef.current, { center: [lat, lng], zoom: 17 });
-        window.L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-          attribution: "© OpenStreetMap contributors",
-          maxZoom: 19,
-        }).addTo(mapRef.current);
-      } else {
-        mapRef.current.setView([lat, lng], 17);
-      }
-      window.L.marker([lat, lng]).addTo(mapRef.current);
-      setCoords({ lat, lng });
+        if (!mapRef.current && mapContainerRef.current) {
+          mapRef.current = new window.kakao.maps.Map(mapContainerRef.current, {
+            center: latlng,
+            level: 3,
+          });
+        } else {
+          mapRef.current?.setCenter(latlng);
+        }
+
+        markerRef.current?.setMap(null);
+        markerRef.current = new window.kakao.maps.Marker({ position: latlng });
+        markerRef.current.setMap(mapRef.current!);
+
+        setCoords({ lat, lng });
+      });
     };
 
-    const loadLeaflet = () => {
-      if (window.L) { initMap(); return; }
-
-      if (!document.getElementById("leaflet-css")) {
-        const link = document.createElement("link");
-        link.id = "leaflet-css";
-        link.rel = "stylesheet";
-        link.href = "https://unpkg.com/leaflet@1.9.4/dist/leaflet.css";
-        document.head.appendChild(link);
+    const loadKakaoMap = () => {
+      if (window.kakao?.maps?.load) {
+        window.kakao.maps.load(initMap);
+        return;
       }
 
-      if (!document.getElementById("leaflet-js")) {
+      const appKey = process.env.NEXT_PUBLIC_KAKAO_APP_KEY;
+      if (!appKey) {
+        console.error("NEXT_PUBLIC_KAKAO_APP_KEY가 설정되지 않았습니다.");
+        return;
+      }
+
+      if (!document.getElementById("kakao-map-script")) {
         const script = document.createElement("script");
-        script.id = "leaflet-js";
-        script.src = "https://unpkg.com/leaflet@1.9.4/dist/leaflet.js";
-        script.onload = initMap;
+        script.id = "kakao-map-script";
+        script.src = `https://dapi.kakao.com/v2/maps/sdk.js?appkey=${appKey}&libraries=services&autoload=false`;
+        script.onload = () => window.kakao.maps.load(initMap);
         document.head.appendChild(script);
       } else {
-        initMap();
+        window.kakao.maps.load(initMap);
       }
     };
 
-    loadLeaflet();
+    loadKakaoMap();
   }, [step, pending]);
 
   // Daum Postcode 스크립트 로드
@@ -147,12 +168,14 @@ export default function KakaoAddressSearch({ onComplete }: Props) {
     });
     setStep("idle");
     setPending(null);
+    markerRef.current = null;
     mapRef.current = null;
   }, [pending, coords, onComplete]);
 
   const close = () => {
     setStep("idle");
     setPending(null);
+    markerRef.current = null;
     mapRef.current = null;
   };
 
