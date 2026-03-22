@@ -52,6 +52,7 @@ export default function SubmissionForm() {
   const [address, setAddress] = useState<AddressData | null>(null);
   const [mapCoords, setMapCoords] = useState<{ lat: number; lng: number } | null>(null);
   const [locationConfirmed, setLocationConfirmed] = useState(false);
+  const [mapError, setMapError] = useState<string | null>(null);
   const [files, setFiles] = useState<File[]>([]);
   const [consentChecked, setConsentChecked] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -66,6 +67,7 @@ export default function SubmissionForm() {
       setAddress(data);
       setMapCoords(null);
       setLocationConfirmed(false);
+      setMapError(null);
       mapRef.current = null;
       markerRef.current = null;
       setErrors((prev) => ({ ...prev, address: undefined, locationConfirmed: undefined }));
@@ -112,7 +114,10 @@ export default function SubmissionForm() {
       }
 
       const appKey = process.env.NEXT_PUBLIC_KAKAO_APP_KEY;
-      if (!appKey) return;
+      if (!appKey) {
+        setMapError("NEXT_PUBLIC_KAKAO_APP_KEY가 설정되지 않았습니다.");
+        return;
+      }
 
       if (!document.getElementById("kakao-map-script")) {
         const script = document.createElement("script");
@@ -317,11 +322,17 @@ export default function SubmissionForm() {
         {/* 지도 + 위치 확인 체크박스 */}
         {address && (
           <div className="rounded-xl overflow-hidden border border-gray-200">
-            <div
-              ref={mapContainerRef}
-              style={{ height: 280 }}
-              className="bg-gray-100 w-full"
-            />
+            {mapError ? (
+              <div style={{ height: 280 }} className="bg-gray-100 w-full flex items-center justify-center">
+                <p className="text-sm text-red-500">{mapError}</p>
+              </div>
+            ) : (
+              <div
+                ref={mapContainerRef}
+                style={{ height: 280 }}
+                className="bg-gray-100 w-full"
+              />
+            )}
             <div className="px-4 py-3 bg-gray-50 border-t border-gray-200">
               <label className="flex items-center gap-2.5 cursor-pointer">
                 <input
