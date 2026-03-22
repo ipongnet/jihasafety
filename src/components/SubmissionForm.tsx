@@ -1,9 +1,41 @@
 "use client";
 
-import { useState, useCallback, useRef } from "react";
+import { useState, useCallback, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import KakaoAddressSearch from "./KakaoAddressSearch";
 import type { AddressData, FormErrors } from "@/types";
+
+declare global {
+  interface Window {
+    kakao: {
+      maps: {
+        load: (callback: () => void) => void;
+        Map: new (container: HTMLElement, options: object) => KakaoMapInstance;
+        LatLng: new (lat: number, lng: number) => object;
+        Marker: new (options: object) => KakaoMarker;
+        services: {
+          Geocoder: new () => KakaoGeocoder;
+          Status: { OK: string };
+        };
+      };
+    };
+  }
+}
+
+interface KakaoMapInstance {
+  setCenter: (latlng: object) => void;
+}
+
+interface KakaoMarker {
+  setMap: (map: KakaoMapInstance | null) => void;
+}
+
+interface KakaoGeocoder {
+  addressSearch: (
+    address: string,
+    callback: (result: Array<{ x: string; y: string }>, status: string) => void
+  ) => void;
+}
 
 const ALLOWED_EXTENSIONS = ["jpg", "jpeg", "png", "pdf", "hwp", "doc", "docx", "xlsx"];
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
@@ -18,18 +50,83 @@ export default function SubmissionForm() {
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
   const [address, setAddress] = useState<AddressData | null>(null);
+  const [mapCoords, setMapCoords] = useState<{ lat: number; lng: number } | null>(null);
+  const [locationConfirmed, setLocationConfirmed] = useState(false);
   const [files, setFiles] = useState<File[]>([]);
   const [consentChecked, setConsentChecked] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState<FormErrors>({});
 
+  const mapContainerRef = useRef<HTMLDivElement>(null);
+  const mapRef = useRef<KakaoMapInstance | null>(null);
+  const markerRef = useRef<KakaoMarker | null>(null);
+
   const handleAddressComplete = useCallback(
-    (data: { fullAddress: string; sido: string; sigungu: string; zonecode: string; latitude?: number; longitude?: number }) => {
+    (data: { fullAddress: string; sido: string; sigungu: string; zonecode: string }) => {
       setAddress(data);
-      setErrors((prev) => ({ ...prev, address: undefined }));
+      setMapCoords(null);
+      setLocationConfirmed(false);
+      mapRef.current = null;
+      markerRef.current = null;
+      setErrors((prev) => ({ ...prev, address: undefined, locationConfirmed: undefined }));
     },
     []
   );
+
+  // 주소 선택 시 Kakao Maps 지오코딩 + 지도 초기화
+  useEffect(() => {
+    if (!address || !mapContainerRef.current) return;
+
+    const initMap = () => {
+      if (!mapContainerRef.current || !window.kakao?.maps) return;
+
+      const geocoder = new window.kakao.maps.services.Geocoder();
+      geocoder.addressSearch(address.fullAddress, (result, status) => {
+        if (status !== window.kakao.maps.services.Status.OK || !result[0]) return;
+
+        const lat = parseFloat(result[0].y);
+        const lng = parseFloat(result[0].x);
+        const latlng = new window.kakao.maps.LatLng(lat, lng);
+
+        if (!mapRef.current && mapContainerRef.current) {
+          mapRef.current = new window.kakao.maps.Map(mapContainerRef.current, {
+            center: latlng,
+            level: 3,
+          });
+        } else {
+          mapRef.current?.setCenter(latlng);
+        }
+
+        markerRef.current?.setMap(null);
+        markerRef.current = new window.kakao.maps.Marker({ position: latlng });
+        markerRef.current.setMap(mapRef.current!);
+
+        setMapCoords({ lat, lng });
+      });
+    };
+
+    const loadKakaoMap = () => {
+      if (window.kakao?.maps?.load) {
+        window.kakao.maps.load(initMap);
+        return;
+      }
+
+      const appKey = process.env.NEXT_PUBLIC_KAKAO_APP_KEY;
+      if (!appKey) return;
+
+      if (!document.getElementById("kakao-map-script")) {
+        const script = document.createElement("script");
+        script.id = "kakao-map-script";
+        script.src = `https://dapi.kakao.com/v2/maps/sdk.js?appkey=${appKey}&libraries=services&autoload=false`;
+        script.onload = () => window.kakao.maps.load(initMap);
+        document.head.appendChild(script);
+      } else {
+        window.kakao.maps.load(initMap);
+      }
+    };
+
+    loadKakaoMap();
+  }, [address]);
 
   const validateFile = (file: File): string | null => {
     const ext = file.name.split(".").pop()?.toLowerCase() ?? "";
@@ -81,6 +178,8 @@ export default function SubmissionForm() {
     }
 
     if (!address) newErrors.address = "공사 위치를 검색해주세요.";
+    else if (!locationConfirmed) newErrors.locationConfirmed = "지도에서 위치를 확인해주세요.";
+
     if (!consentChecked) newErrors.consentGiven = "개인정보 수집에 동의해주세요.";
 
     setErrors(newErrors);
@@ -101,8 +200,10 @@ export default function SubmissionForm() {
       formData.append("fullAddress", address.fullAddress);
       formData.append("sido", address.sido);
       formData.append("sigungu", address.sigungu);
-      if (address.latitude) formData.append("latitude", String(address.latitude));
-      if (address.longitude) formData.append("longitude", String(address.longitude));
+      if (mapCoords) {
+        formData.append("latitude", String(mapCoords.lat));
+        formData.append("longitude", String(mapCoords.lng));
+      }
       formData.append("consentGiven", "true");
 
       for (const file of files) {
@@ -211,6 +312,38 @@ export default function SubmissionForm() {
         </div>
         {errors.address && (
           <p className="text-red-500 text-xs">{errors.address}</p>
+        )}
+
+        {/* 지도 + 위치 확인 체크박스 */}
+        {address && (
+          <div className="rounded-xl overflow-hidden border border-gray-200">
+            <div
+              ref={mapContainerRef}
+              style={{ height: 280 }}
+              className="bg-gray-100 w-full"
+            />
+            <div className="px-4 py-3 bg-gray-50 border-t border-gray-200">
+              <label className="flex items-center gap-2.5 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={locationConfirmed}
+                  onChange={(e) => {
+                    setLocationConfirmed(e.target.checked);
+                    if (e.target.checked) {
+                      setErrors((prev) => ({ ...prev, locationConfirmed: undefined }));
+                    }
+                  }}
+                  className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                />
+                <span className="text-sm text-gray-700">
+                  지도에서 공사 위치를 확인했습니다.
+                </span>
+              </label>
+              {errors.locationConfirmed && (
+                <p className="text-red-500 text-xs mt-1">{errors.locationConfirmed}</p>
+              )}
+            </div>
+          </div>
         )}
       </div>
 

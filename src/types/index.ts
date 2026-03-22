@@ -29,6 +29,7 @@ export interface FormErrors {
   constructionStartDate?: string;
   constructionEndDate?: string;
   address?: string;
+  locationConfirmed?: string;
   files?: string;
   consentGiven?: string;
 }
