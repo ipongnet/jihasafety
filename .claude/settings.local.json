@@ -11,7 +11,13 @@
       "Bash(node:*)",
       "Bash(npm ls:*)",
       "Bash(npm uninstall:*)",
-      "Bash(git init:*)"
+      "Bash(git init:*)",
+      "Bash(git remote:*)",
+      "Bash(git push:*)",
+      "Bash(npm show:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(wait)"
     ]
   }
 }
