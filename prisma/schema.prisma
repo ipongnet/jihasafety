@@ -1,0 +1,40 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../node_modules/.prisma/client"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+model CityContact {
+  id          Int          @id @default(autoincrement())
+  sido        String
+  sigungu     String
+  personName  String
+  email       String
+  phone       String
+  department  String?
+  submissions Submission[]
+
+  @@unique([sido, sigungu])
+}
+
+model Submission {
+  id                    Int          @id @default(autoincrement())
+  projectName           String
+  companyName           String
+  constructionStartDate DateTime
+  constructionEndDate   DateTime
+  fullAddress           String
+  sido                  String
+  sigungu               String
+  latitude              Float?
+  longitude             Float?
+  emailSentTo           String?
+  status                String
+  consentGiven          Boolean      @default(true)
+  cityContactId         Int?
+  cityContact           CityContact? @relation(fields: [cityContactId], references: [id])
+  createdAt             DateTime     @default(now())
+}

@@ -1,0 +1,17 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npx:*)",
+      "Bash(npm init:*)",
+      "Bash(npm_config_yes=true npx --yes create-next-app@latest /tmp/jihasafety-temp --typescript --tailwind --eslint --app --src-dir --import-alias \"@/*\" --use-npm)",
+      "Bash(printf 'no\\\\nno\\\\n')",
+      "Bash(npm install:*)",
+      "Bash(npm run:*)",
+      "Bash(DATABASE_URL=\"file:./dev.db\" npx prisma db push 2>&1)",
+      "Bash(node:*)",
+      "Bash(npm ls:*)",
+      "Bash(npm uninstall:*)",
+      "Bash(git init:*)"
+    ]
+  }
+}

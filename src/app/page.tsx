@@ -1,0 +1,30 @@
+import Header from "@/components/Header";
+import Footer from "@/components/Footer";
+import SubmissionForm from "@/components/SubmissionForm";
+
+export default function Home() {
+  return (
+    <div className="min-h-screen flex flex-col">
+      <Header />
+
+      <main className="flex-1 bg-gray-50">
+        <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+          <div className="text-center mb-8">
+            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">
+              굴착공사 안전신고 접수
+            </h1>
+            <p className="text-gray-500">
+              공사 정보를 입력하면 해당 지역 담당자에게 자동으로 알림이 발송됩니다.
+            </p>
+          </div>
+
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 sm:p-8">
+            <SubmissionForm />
+          </div>
+        </div>
+      </main>
+
+      <Footer />
+    </div>
+  );
+}
