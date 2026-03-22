@@ -2,7 +2,36 @@ import { cookies } from "next/headers";
 import bcrypt from "bcryptjs";
 import crypto from "crypto";
 
-const sessions = new Map<string, { expiresAt: number }>();
+const SESSION_DURATION_MS = 2 * 60 * 60 * 1000; // 2시간
+
+function getSecret(): string {
+  const secret = process.env.SESSION_SECRET;
+  if (!secret) throw new Error("SESSION_SECRET이 설정되지 않았습니다.");
+  return secret;
+}
+
+function sign(payload: string): string {
+  return crypto.createHmac("sha256", getSecret()).update(payload).digest("hex");
+}
+
+function createToken(expiresAt: number): string {
+  const payload = String(expiresAt);
+  return `${payload}.${sign(payload)}`;
+}
+
+function verifyToken(token: string): boolean {
+  const dotIndex = token.lastIndexOf(".");
+  if (dotIndex === -1) return false;
+  const payload = token.slice(0, dotIndex);
+  const signature = token.slice(dotIndex + 1);
+  const expected = sign(payload);
+  try {
+    if (!crypto.timingSafeEqual(Buffer.from(signature, "hex"), Buffer.from(expected, "hex"))) return false;
+  } catch {
+    return false;
+  }
+  return Date.now() < parseInt(payload, 10);
+}
 
 export async function verifyPassword(password: string): Promise<boolean> {
   const hash = process.env.ADMIN_PASSWORD_HASH;
@@ -11,10 +40,7 @@ export async function verifyPassword(password: string): Promise<boolean> {
 }
 
 export function createSession(): string {
-  const token = crypto.randomUUID();
-  const expiresAt = Date.now() + 2 * 60 * 60 * 1000; // 2시간
-  sessions.set(token, { expiresAt });
-  return token;
+  return createToken(Date.now() + SESSION_DURATION_MS);
 }
 
 export async function setSessionCookie(token: string) {
@@ -23,7 +49,7 @@ export async function setSessionCookie(token: string) {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
     sameSite: "strict",
-    maxAge: 2 * 60 * 60,
+    maxAge: SESSION_DURATION_MS / 1000,
     path: "/",
   });
 }
@@ -32,18 +58,10 @@ export async function getSession(): Promise<boolean> {
   const cookieStore = await cookies();
   const token = cookieStore.get("session")?.value;
   if (!token) return false;
-  const session = sessions.get(token);
-  if (!session) return false;
-  if (Date.now() > session.expiresAt) {
-    sessions.delete(token);
-    return false;
-  }
-  return true;
+  return verifyToken(token);
 }
 
 export async function clearSession() {
   const cookieStore = await cookies();
-  const token = cookieStore.get("session")?.value;
-  if (token) sessions.delete(token);
   cookieStore.delete("session");
 }
