@@ -25,7 +25,7 @@ function contentSecurityPolicy(): string {
 const nextConfig: NextConfig = {
   experimental: {
     serverActions: {
-      bodySizeLimit: "50mb",
+      bodySizeLimit: "10mb",
     },
   },
   async headers() {

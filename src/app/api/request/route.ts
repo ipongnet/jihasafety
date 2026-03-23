@@ -83,8 +83,8 @@ export async function POST(request: NextRequest) {
     }
 
     const totalSize = attachments.reduce((sum, a) => sum + a.content.length, 0);
-    if (totalSize > 50 * 1024 * 1024) {
-      return NextResponse.json({ success: false, message: "총 파일 크기가 50MB를 초과합니다." }, { status: 400 });
+    if (totalSize > 10 * 1024 * 1024) {
+      return NextResponse.json({ success: false, message: "총 파일 크기가 10MB를 초과합니다." }, { status: 400 });
     }
 
     // CSV 생성
