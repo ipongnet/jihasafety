@@ -101,16 +101,22 @@ export default function SubmissionForm() {
 
     if (window.vw) {
       initMap();
-    } else {
-      const existing = document.getElementById("vworld-map-script");
-      if (existing) { existing.addEventListener("load", initMap); return; }
-      const script = document.createElement("script");
-      script.id = "vworld-map-script";
-      script.src = `https://map.vworld.kr/js/vworldMapInit.js.do?version=2.0&apiKey=${apiKey}`;
-      script.onload = initMap;
-      script.onerror = () => setMapError("V-World 지도 스크립트 로드에 실패했습니다. 지도 없이 접수할 수 있습니다.");
-      document.head.appendChild(script);
+      return;
     }
+
+    const existing = document.getElementById("vworld-map-script");
+    if (existing) {
+      // 스크립트 태그는 있지만 아직 로드 중 — 완료 시 initMap 실행
+      existing.addEventListener("load", initMap, { once: true });
+      return;
+    }
+
+    const script = document.createElement("script");
+    script.id = "vworld-map-script";
+    script.src = `https://map.vworld.kr/js/vworldMapInit.js.do?version=2.0&apiKey=${apiKey}`;
+    script.onload = initMap;
+    script.onerror = () => setMapError("V-World 지도 스크립트 로드에 실패했습니다. 지도 없이 접수할 수 있습니다.");
+    document.head.appendChild(script);
   }, [mapCoords]);
 
   const validateFile = (file: File): string | null => {
