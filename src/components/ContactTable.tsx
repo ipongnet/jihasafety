@@ -90,6 +90,7 @@ export default function ContactTable({ initial, initialDepartments }: { initial:
   const [editForm, setEditForm] = useState(EMPTY_FORM);
   const [showAdd, setShowAdd] = useState(false);
   const [addForm, setAddForm] = useState(EMPTY_FORM);
+  const [nameDropdown, setNameDropdown] = useState(false);
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
   const [search, setSearch] = useState("");
@@ -335,7 +336,55 @@ export default function ContactTable({ initial, initialDepartments }: { initial:
                 <td className="px-4 py-2">
                   <SigunguSelect sido={addForm.sido} value={addForm.sigungu} onChange={(v) => setAddForm((f) => ({ ...f, sigungu: v }))} className={selectCls} />
                 </td>
-                <td className="px-4 py-2"><input className={inputCls} value={addForm.personName} onChange={(e) => setAddForm((f) => ({ ...f, personName: e.target.value }))} placeholder="홍길동" /></td>
+                <td className="px-4 py-2">
+                  <div className="relative">
+                    <input
+                      className={inputCls}
+                      value={addForm.personName}
+                      onChange={(e) => {
+                        setAddForm((f) => ({ ...f, personName: e.target.value }));
+                        setNameDropdown(true);
+                      }}
+                      onBlur={() => setTimeout(() => setNameDropdown(false), 150)}
+                      placeholder="홍길동"
+                      autoComplete="off"
+                    />
+                    {nameDropdown && (() => {
+                      const q = addForm.personName.trim();
+                      const seen = new Set<string>();
+                      const suggestions = q
+                        ? contacts.filter((c) => {
+                            if (seen.has(c.personName)) return false;
+                            seen.add(c.personName);
+                            return c.personName.includes(q);
+                          })
+                        : [];
+                      return suggestions.length > 0 ? (
+                        <ul className="absolute z-20 left-0 right-0 top-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-40 overflow-y-auto">
+                          {suggestions.map((c) => (
+                            <li
+                              key={c.id}
+                              onMouseDown={() => {
+                                setAddForm((f) => ({
+                                  ...f,
+                                  personName: c.personName,
+                                  email: c.email,
+                                  phone: c.phone,
+                                  department: c.department ?? "",
+                                }));
+                                setNameDropdown(false);
+                              }}
+                              className="px-3 py-2 text-sm text-gray-700 hover:bg-blue-50 cursor-pointer flex items-center justify-between gap-2"
+                            >
+                              <span className="font-medium">{c.personName}</span>
+                              <span className="text-xs text-gray-400 truncate">{c.department ?? ""}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      ) : null;
+                    })()}
+                  </div>
+                </td>
                 <td className="px-4 py-2"><input className={inputCls} value={addForm.email} onChange={(e) => setAddForm((f) => ({ ...f, email: e.target.value }))} placeholder="example@gov.kr" /></td>
                 <td className="px-4 py-2"><input className={inputCls} value={addForm.phone} onChange={(e) => setAddForm((f) => ({ ...f, phone: e.target.value }))} placeholder="02-1234-5678" /></td>
                 <td className="px-4 py-2">

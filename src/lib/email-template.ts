@@ -40,7 +40,7 @@ export function buildEmailHTML(data: EmailData): string {
 <body style="font-family:'Noto Sans KR',sans-serif;margin:0;padding:0;background:#f5f5f5;">
   <div style="max-width:600px;margin:20px auto;background:#fff;border-radius:8px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,0.1);">
     <div style="background:#2563eb;color:#fff;padding:24px 32px;">
-      <h1 style="margin:0;font-size:20px;">굴착공사 안전신고 접수</h1>
+      <h1 style="margin:0;font-size:20px;">굴착공사 유관기관 협의서 신청</h1>
     </div>
     <div style="padding:32px;">
       <table style="width:100%;border-collapse:collapse;">
