@@ -228,6 +228,11 @@ export default function SubmissionForm() {
 
       const res = await fetch("/api/request", { method: "POST", body: formData });
       if (res.ok) {
+        const data = await res.json().catch(() => ({}));
+        sessionStorage.setItem("submissionResult", JSON.stringify({
+          emailSentTo: data.emailSentTo ?? null,
+          contact: data.contact ?? null,
+        }));
         router.push("/request/complete");
         return;
       }

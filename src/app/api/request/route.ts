@@ -162,6 +162,12 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       success: true,
       submissionId,
+      emailSentTo,
+      contact: contact ? {
+        personName: contact.personName,
+        department: contact.department ?? null,
+        phone: contact.phone,
+      } : null,
     });
   } catch {
     return NextResponse.json(
