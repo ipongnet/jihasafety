@@ -209,18 +209,18 @@ export default function ContactTable({ initial, initialDepartments }: { initial:
   return (
     <div className="space-y-4">
       {/* 통계 카드 */}
-      <div className="grid grid-cols-3 gap-3">
-        <div className="bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-center">
-          <p className="text-xs text-gray-400 mb-1">전체 시/군/구</p>
-          <p className="text-2xl font-bold text-gray-800">{totalSigungu}</p>
+      <div className="flex gap-2">
+        <div className="bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 flex items-center gap-2">
+          <p className="text-xs text-gray-400">전체</p>
+          <p className="text-sm font-bold text-gray-800">{totalSigungu}</p>
         </div>
-        <div className="bg-blue-50 border border-blue-200 rounded-xl px-4 py-3 text-center">
-          <p className="text-xs text-blue-400 mb-1">담당자 등록</p>
-          <p className="text-2xl font-bold text-blue-600">{registered}</p>
+        <div className="bg-blue-50 border border-blue-200 rounded-lg px-3 py-2 flex items-center gap-2">
+          <p className="text-xs text-blue-400">등록</p>
+          <p className="text-sm font-bold text-blue-600">{registered}</p>
         </div>
-        <div className="bg-red-50 border border-red-200 rounded-xl px-4 py-3 text-center">
-          <p className="text-xs text-red-400 mb-1">미등록</p>
-          <p className="text-2xl font-bold text-red-500">{unregistered}</p>
+        <div className="bg-red-50 border border-red-200 rounded-lg px-3 py-2 flex items-center gap-2">
+          <p className="text-xs text-red-400">미등록</p>
+          <p className="text-sm font-bold text-red-500">{unregistered}</p>
         </div>
       </div>
 
@@ -401,7 +401,6 @@ export default function ContactTable({ initial, initialDepartments }: { initial:
         </table>
       </div>
 
-      <p className="text-xs text-gray-400">전체 {totalSigungu}개 시/군/구 중 {registered}개 등록 · {unregistered}개 미등록</p>
     </div>
   );
 }
