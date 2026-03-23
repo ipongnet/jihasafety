@@ -49,13 +49,20 @@ export async function GET(request: NextRequest) {
   for (const type of ["road", "parcel"] as const) {
     try {
       const url = buildUrl(type);
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 10000);
       const res = await fetch(url, {
-        next: { revalidate: 0 },
-        headers: { "Referer": "https://jihasafety.vercel.app/" },
+        cache: "no-store",
+        signal: controller.signal,
+        headers: {
+          "Referer": "https://jihasafety.vercel.app/",
+          "User-Agent": "Mozilla/5.0",
+        },
       });
+      clearTimeout(timeout);
       const text = await res.text();
       let data;
-      try { data = JSON.parse(text); } catch { errors.push(`${type}: invalid JSON: ${text.slice(0, 200)}`); continue; }
+      try { data = JSON.parse(text); } catch { errors.push(`${type}: status=${res.status}, body=${text.slice(0, 300)}`); continue; }
       if (data.response?.status === "OK" && data.response.result?.point) {
         const { x, y } = data.response.result.point;
         return NextResponse.json({ lat: parseFloat(y), lng: parseFloat(x) });
