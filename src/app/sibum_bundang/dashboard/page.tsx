@@ -17,12 +17,13 @@ export default async function DashboardPage({ searchParams }: Props) {
   const { tab } = await searchParams;
   const activeTab = tab === "submissions" ? "submissions" : "contacts";
 
-  const [contacts, submissions] = await Promise.all([
+  const [contacts, submissions, departments] = await Promise.all([
     prisma.cityContact.findMany({ orderBy: [{ sido: "asc" }, { sigungu: "asc" }] }),
     prisma.submission.findMany({
       orderBy: { createdAt: "desc" },
       include: { cityContact: { select: { personName: true } } },
     }),
+    prisma.department.findMany({ orderBy: { id: "asc" } }),
   ]);
 
   return (
@@ -90,7 +91,7 @@ export default async function DashboardPage({ searchParams }: Props) {
         {/* 탭 콘텐츠 */}
         <div className="bg-white rounded-xl border border-gray-100 p-6">
           {activeTab === "contacts" ? (
-            <ContactTable initial={contacts} />
+            <ContactTable initial={contacts} initialDepartments={departments} />
           ) : (
             <SubmissionTable initial={submissions.map((s) => ({
               ...s,

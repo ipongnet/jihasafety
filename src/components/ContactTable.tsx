@@ -60,7 +60,9 @@ function SigunguSelect({ sido, value, onChange, className }: { sido: string; val
   );
 }
 
-export default function ContactTable({ initial }: { initial: Contact[] }) {
+interface Department { id: number; name: string; }
+
+export default function ContactTable({ initial, initialDepartments }: { initial: Contact[]; initialDepartments: Department[] }) {
   const [contacts, setContacts] = useState<Contact[]>(initial);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [editForm, setEditForm] = useState(EMPTY_FORM);
@@ -69,6 +71,32 @@ export default function ContactTable({ initial }: { initial: Contact[] }) {
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
   const [search, setSearch] = useState("");
+
+  // 부서 관리
+  const [departments, setDepartments] = useState<Department[]>(initialDepartments);
+  const [showDeptManager, setShowDeptManager] = useState(false);
+  const [newDeptName, setNewDeptName] = useState("");
+  const [deptError, setDeptError] = useState("");
+
+  const addDepartment = async () => {
+    if (!newDeptName.trim()) return;
+    setDeptError("");
+    const res = await fetch("/api/departments", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name: newDeptName.trim() }),
+    });
+    const data = await res.json();
+    if (!res.ok) { setDeptError(data.message); return; }
+    setDepartments((prev) => [...prev, data]);
+    setNewDeptName("");
+  };
+
+  const deleteDepartment = async (id: number) => {
+    if (!confirm("부서를 삭제하시겠습니까?")) return;
+    const res = await fetch(`/api/departments/${id}`, { method: "DELETE" });
+    if (res.ok) setDepartments((prev) => prev.filter((d) => d.id !== id));
+  };
 
   const filtered = contacts.filter(
     (c) =>
@@ -159,7 +187,7 @@ export default function ContactTable({ initial }: { initial: Contact[] }) {
         </div>
       </div>
 
-      {/* 검색 + 추가 버튼 */}
+      {/* 검색 + 버튼 */}
       <div className="flex items-center justify-between gap-3">
         <input
           type="text"
@@ -168,16 +196,55 @@ export default function ContactTable({ initial }: { initial: Contact[] }) {
           onChange={(e) => setSearch(e.target.value)}
           className="border border-gray-200 rounded-lg px-4 py-2 text-sm w-72 focus:ring-2 focus:ring-blue-400 outline-none"
         />
-        <button
-          onClick={() => { setShowAdd(true); setError(""); }}
-          className="bg-blue-600 text-white text-sm font-medium px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-1.5"
-        >
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-          </svg>
-          담당자 추가
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => { setShowDeptManager(!showDeptManager); setDeptError(""); }}
+            className="border border-gray-200 text-gray-600 text-sm font-medium px-4 py-2 rounded-lg hover:bg-gray-50 transition-colors"
+          >
+            부서 관리
+          </button>
+          <button
+            onClick={() => { setShowAdd(true); setError(""); }}
+            className="bg-blue-600 text-white text-sm font-medium px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-1.5"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+            </svg>
+            담당자 추가
+          </button>
+        </div>
       </div>
+
+      {/* 부서 관리 패널 */}
+      {showDeptManager && (
+        <div className="border border-gray-200 rounded-xl p-4 bg-gray-50 space-y-3">
+          <p className="text-sm font-medium text-gray-700">부서 목록</p>
+          <div className="flex flex-wrap gap-2">
+            {departments.map((d) => (
+              <span key={d.id} className="flex items-center gap-1.5 bg-white border border-gray-200 rounded-lg px-3 py-1.5 text-sm text-gray-700">
+                {d.name}
+                <button onClick={() => deleteDepartment(d.id)} className="text-red-400 hover:text-red-600 ml-1">
+                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </span>
+            ))}
+          </div>
+          <div className="flex gap-2">
+            <input
+              type="text"
+              value={newDeptName}
+              onChange={(e) => setNewDeptName(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && addDepartment()}
+              placeholder="새 부서명 입력"
+              className="border border-gray-200 rounded-lg px-3 py-1.5 text-sm flex-1 focus:ring-2 focus:ring-blue-400 outline-none"
+            />
+            <button onClick={addDepartment} className="bg-gray-700 text-white text-sm px-4 py-1.5 rounded-lg hover:bg-gray-800">추가</button>
+          </div>
+          {deptError && <p className="text-red-500 text-xs">{deptError}</p>}
+        </div>
+      )}
 
       {error && <p className="text-red-500 text-sm">{error}</p>}
 
@@ -208,7 +275,12 @@ export default function ContactTable({ initial }: { initial: Contact[] }) {
                 <td className="px-4 py-2"><input className={inputCls} value={addForm.personName} onChange={(e) => setAddForm((f) => ({ ...f, personName: e.target.value }))} placeholder="홍길동" /></td>
                 <td className="px-4 py-2"><input className={inputCls} value={addForm.email} onChange={(e) => setAddForm((f) => ({ ...f, email: e.target.value }))} placeholder="example@gov.kr" /></td>
                 <td className="px-4 py-2"><input className={inputCls} value={addForm.phone} onChange={(e) => setAddForm((f) => ({ ...f, phone: e.target.value }))} placeholder="02-1234-5678" /></td>
-                <td className="px-4 py-2"><input className={inputCls} value={addForm.department} onChange={(e) => setAddForm((f) => ({ ...f, department: e.target.value }))} placeholder="도로관리과" /></td>
+                <td className="px-4 py-2">
+                  <select className={selectCls} value={addForm.department} onChange={(e) => setAddForm((f) => ({ ...f, department: e.target.value }))}>
+                    <option value="">부서 선택</option>
+                    {departments.map((d) => <option key={d.id} value={d.name}>{d.name}</option>)}
+                  </select>
+                </td>
                 <td className="px-4 py-2 text-center">
                   <div className="flex items-center justify-center gap-1">
                     <button onClick={addContact} disabled={saving} className="text-xs bg-blue-600 text-white px-2 py-1 rounded hover:bg-blue-700 disabled:opacity-50">저장</button>
@@ -237,7 +309,12 @@ export default function ContactTable({ initial }: { initial: Contact[] }) {
                     <td className="px-4 py-2"><input className={inputCls} value={editForm.personName} onChange={(e) => setEditForm((f) => ({ ...f, personName: e.target.value }))} /></td>
                     <td className="px-4 py-2"><input className={inputCls} value={editForm.email} onChange={(e) => setEditForm((f) => ({ ...f, email: e.target.value }))} /></td>
                     <td className="px-4 py-2"><input className={inputCls} value={editForm.phone} onChange={(e) => setEditForm((f) => ({ ...f, phone: e.target.value }))} /></td>
-                    <td className="px-4 py-2"><input className={inputCls} value={editForm.department} onChange={(e) => setEditForm((f) => ({ ...f, department: e.target.value }))} /></td>
+                    <td className="px-4 py-2">
+                      <select className={selectCls} value={editForm.department} onChange={(e) => setEditForm((f) => ({ ...f, department: e.target.value }))}>
+                        <option value="">부서 선택</option>
+                        {departments.map((d) => <option key={d.id} value={d.name}>{d.name}</option>)}
+                      </select>
+                    </td>
                     <td className="px-4 py-2 text-center">
                       <div className="flex items-center justify-center gap-1">
                         <button onClick={saveEdit} disabled={saving} className="text-xs bg-blue-600 text-white px-2 py-1 rounded hover:bg-blue-700 disabled:opacity-50">저장</button>
