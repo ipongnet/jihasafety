@@ -137,8 +137,28 @@ export default function ContactTable({ initial }: { initial: Contact[] }) {
   const inputCls = "border border-gray-200 rounded px-2 py-1 text-sm w-full focus:ring-1 focus:ring-blue-400 outline-none";
   const selectCls = "border border-gray-200 rounded px-2 py-1 text-sm w-full focus:ring-1 focus:ring-blue-400 outline-none bg-white disabled:bg-gray-100 disabled:text-gray-400";
 
+  const totalSigungu = Object.values(SIGUNGU_MAP).reduce((sum, arr) => sum + arr.length, 0);
+  const registered = contacts.length;
+  const unregistered = totalSigungu - registered;
+
   return (
     <div className="space-y-4">
+      {/* 통계 카드 */}
+      <div className="grid grid-cols-3 gap-3">
+        <div className="bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-center">
+          <p className="text-xs text-gray-400 mb-1">전체 시/군/구</p>
+          <p className="text-2xl font-bold text-gray-800">{totalSigungu}</p>
+        </div>
+        <div className="bg-blue-50 border border-blue-200 rounded-xl px-4 py-3 text-center">
+          <p className="text-xs text-blue-400 mb-1">담당자 등록</p>
+          <p className="text-2xl font-bold text-blue-600">{registered}</p>
+        </div>
+        <div className="bg-red-50 border border-red-200 rounded-xl px-4 py-3 text-center">
+          <p className="text-xs text-red-400 mb-1">미등록</p>
+          <p className="text-2xl font-bold text-red-500">{unregistered}</p>
+        </div>
+      </div>
+
       {/* 검색 + 추가 버튼 */}
       <div className="flex items-center justify-between gap-3">
         <input
@@ -247,7 +267,7 @@ export default function ContactTable({ initial }: { initial: Contact[] }) {
         </table>
       </div>
 
-      <p className="text-xs text-gray-400">총 {contacts.length}개 지역 담당자 등록됨</p>
+      <p className="text-xs text-gray-400">전체 {totalSigungu}개 시/군/구 중 {registered}개 등록 · {unregistered}개 미등록</p>
     </div>
   );
 }
