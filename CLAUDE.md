@@ -118,13 +118,6 @@ SESSION_SECRET="random-secret-string"
 4. **카카오맵 서비스 활성화** 필수: 앱 → 카카오맵 → 활성화 ON
 5. `NEXT_PUBLIC_KAKAO_APP_KEY`는 빌드 시 번들에 내장 → 변경 시 Vercel Redeploy 필요
 
-## KakaoAddressSearch 동작 흐름
-1. "주소 검색" 버튼 클릭 → Daum Postcode 스크립트 로드 (onload 감지)
-2. 주소 선택 → sido/sigungu/address/zonecode 추출
-3. Kakao Maps SDK 동적 로드 (실패한 이전 script 태그 자동 제거 후 재시도)
-4. Geocoder로 좌표 변환 → 지도 + 마커 표시
-5. 체크박스 확인 → onComplete 콜백으로 데이터 전달
-
 ## 파일 첨부 기능 (시공업체 → 담당자)
 - 허용 형식: 이미지(jpg, png), PDF, 문서(hwp, doc, docx, xlsx)
 - **최대 파일 크기: 파일당 5MB, 총 10MB**
@@ -138,14 +131,6 @@ Daum Postcode API 축약형 → DB 정식명칭 변환 후 3단계 매칭:
 1. **sido + sigungu 정확 매칭** (예: 경기도 + 수원시 영통구)
 2. **sigungu만 정확 매칭** (sido 무관)
 3. **시 단위 prefix 매칭**: `수원시 영통구` → `수원시`로 등록된 담당자 매칭
-
-```
-서울 → 서울특별시    부산 → 부산광역시    대구 → 대구광역시    인천 → 인천광역시
-광주 → 광주광역시    대전 → 대전광역시    울산 → 울산광역시    세종 → 세종특별자치시
-경기 → 경기도        강원 → 강원특별자치도  충북 → 충청북도    충남 → 충청남도
-전북 → 전북특별자치도  전남 → 전라남도    경북 → 경상북도    경남 → 경상남도
-제주 → 제주특별자치도
-```
 
 ## 보안 요구사항
 - **입력값 검증**: 모든 API에서 서버 사이드 검증 (길이, 형식)
@@ -177,5 +162,4 @@ npx prisma db push       # DB 스키마 적용 (Neon)
 npx prisma db seed       # 시드 데이터 삽입
 npx prisma studio        # DB GUI
 vercel env pull          # Vercel 환경변수 로컬로 가져오기
-node -e "..."            # 초기 부서 데이터 삽입 (schema 변경 시)
 ```
