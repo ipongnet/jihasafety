@@ -10,6 +10,7 @@ function escapeHtml(str: string): string {
 interface EmailData {
   projectName: string;
   companyName: string;
+  submitterEmail: string;
   constructionStartDate: string;
   constructionEndDate: string;
   fullAddress: string;
@@ -27,6 +28,7 @@ export function buildEmailHTML(data: EmailData): string {
   const e = {
     projectName: escapeHtml(data.projectName),
     companyName: escapeHtml(data.companyName),
+    submitterEmail: escapeHtml(data.submitterEmail),
     fullAddress: escapeHtml(data.fullAddress),
     sido: escapeHtml(data.sido),
     sigungu: escapeHtml(data.sigungu),
@@ -49,6 +51,10 @@ export function buildEmailHTML(data: EmailData): string {
         <tr>
           <td style="padding:10px 12px;background:#f8fafc;font-weight:600;border-bottom:1px solid #e2e8f0;">시공업체</td>
           <td style="padding:10px 12px;border-bottom:1px solid #e2e8f0;">${e.companyName}</td>
+        </tr>
+        <tr>
+          <td style="padding:10px 12px;background:#f8fafc;font-weight:600;border-bottom:1px solid #e2e8f0;">신청자 이메일</td>
+          <td style="padding:10px 12px;border-bottom:1px solid #e2e8f0;">${e.submitterEmail}</td>
         </tr>
         <tr>
           <td style="padding:10px 12px;background:#f8fafc;font-weight:600;border-bottom:1px solid #e2e8f0;">공사예정기간</td>

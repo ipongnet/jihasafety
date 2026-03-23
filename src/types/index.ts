@@ -26,6 +26,7 @@ export interface SubmissionResponse {
 export interface FormErrors {
   projectName?: string;
   companyName?: string;
+  submitterEmail?: string;
   constructionStartDate?: string;
   constructionEndDate?: string;
   address?: string;

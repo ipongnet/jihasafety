@@ -6,6 +6,7 @@ interface Submission {
   id: number;
   projectName: string;
   companyName: string;
+  submitterEmail: string | null;
   constructionStartDate: string;
   constructionEndDate: string;
   fullAddress: string;
@@ -84,6 +85,7 @@ export default function SubmissionTable({ initial }: { initial: Submission[] }) 
               <th className="px-4 py-3 text-left">접수일시</th>
               <th className="px-4 py-3 text-left">공사명</th>
               <th className="px-4 py-3 text-left">시공업체</th>
+              <th className="px-4 py-3 text-left">신청자 이메일</th>
               <th className="px-4 py-3 text-left">공사위치</th>
               <th className="px-4 py-3 text-left">공사기간</th>
               <th className="px-4 py-3 text-left">발송 대상</th>
@@ -93,7 +95,7 @@ export default function SubmissionTable({ initial }: { initial: Submission[] }) 
           <tbody className="divide-y divide-gray-100">
             {filtered.length === 0 ? (
               <tr>
-                <td colSpan={7} className="px-4 py-8 text-center text-gray-400">
+                <td colSpan={8} className="px-4 py-8 text-center text-gray-400">
                   접수 이력이 없습니다.
                 </td>
               </tr>
@@ -114,6 +116,7 @@ export default function SubmissionTable({ initial }: { initial: Submission[] }) 
                     <td className="px-4 py-3 text-gray-500 whitespace-nowrap">{createdAt}</td>
                     <td className="px-4 py-3 font-medium text-gray-900 max-w-[160px] truncate">{s.projectName}</td>
                     <td className="px-4 py-3 text-gray-700 whitespace-nowrap">{s.companyName}</td>
+                    <td className="px-4 py-3 text-gray-600">{s.submitterEmail ?? "-"}</td>
                     <td className="px-4 py-3 text-gray-600 max-w-[180px] truncate">{s.fullAddress}</td>
                     <td className="px-4 py-3 text-gray-500 whitespace-nowrap">{startDate} ~ {endDate}</td>
                     <td className="px-4 py-3 text-gray-600">

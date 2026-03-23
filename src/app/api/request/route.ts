@@ -25,6 +25,7 @@ export async function POST(request: NextRequest) {
 
     const projectName = validateString(formData.get("projectName"), 200);
     const companyName = validateString(formData.get("companyName"), 100);
+    const submitterEmail = validateString(formData.get("submitterEmail"), 200);
     const constructionStartDate = validateString(formData.get("constructionStartDate"), 20);
     const constructionEndDate = validateString(formData.get("constructionEndDate"), 20);
     const fullAddress = validateString(formData.get("fullAddress"), 500);
@@ -34,8 +35,11 @@ export async function POST(request: NextRequest) {
     const lngStr = formData.get("longitude");
     const consentGiven = formData.get("consentGiven") === "true";
 
-    if (!projectName || !companyName || !constructionStartDate || !constructionEndDate || !fullAddress || !sido || !sigungu) {
+    if (!projectName || !companyName || !submitterEmail || !constructionStartDate || !constructionEndDate || !fullAddress || !sido || !sigungu) {
       return NextResponse.json({ success: false, message: "필수 항목을 모두 입력해주세요." }, { status: 400 });
+    }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(submitterEmail)) {
+      return NextResponse.json({ success: false, message: "올바른 이메일 형식을 입력해주세요." }, { status: 400 });
     }
 
     if (!consentGiven) {
@@ -97,6 +101,7 @@ export async function POST(request: NextRequest) {
       latitude,
       longitude,
       companyName,
+      submitterEmail,
       replyEmail,
     });
     attachments.unshift({
@@ -115,6 +120,7 @@ export async function POST(request: NextRequest) {
       const emailData = {
         projectName,
         companyName,
+        submitterEmail,
         constructionStartDate,
         constructionEndDate,
         fullAddress,
@@ -144,6 +150,7 @@ export async function POST(request: NextRequest) {
         data: {
           projectName,
           companyName,
+          submitterEmail,
           constructionStartDate: startDate,
           constructionEndDate: endDate,
           fullAddress,

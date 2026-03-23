@@ -47,6 +47,7 @@ export default function SubmissionForm() {
 
   const [projectName, setProjectName] = useState("");
   const [companyName, setCompanyName] = useState("");
+  const [submitterEmail, setSubmitterEmail] = useState("");
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
   const [address, setAddress] = useState<AddressData | null>(null);
@@ -187,6 +188,9 @@ export default function SubmissionForm() {
     if (!companyName.trim()) newErrors.companyName = "시공업체명을 입력해주세요.";
     else if (companyName.length > 100) newErrors.companyName = "시공업체명은 100자 이내로 입력해주세요.";
 
+    if (!submitterEmail.trim()) newErrors.submitterEmail = "이메일 주소를 입력해주세요.";
+    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(submitterEmail)) newErrors.submitterEmail = "올바른 이메일 형식을 입력해주세요.";
+
     if (!startDate) newErrors.constructionStartDate = "공사 시작일을 선택해주세요.";
     if (!endDate) newErrors.constructionEndDate = "공사 종료일을 선택해주세요.";
     if (startDate && endDate && endDate < startDate) {
@@ -211,6 +215,7 @@ export default function SubmissionForm() {
       const formData = new FormData();
       formData.append("projectName", projectName.trim());
       formData.append("companyName", companyName.trim());
+      formData.append("submitterEmail", submitterEmail.trim());
       formData.append("constructionStartDate", startDate);
       formData.append("constructionEndDate", endDate);
       formData.append("fullAddress", address.fullAddress);
@@ -287,6 +292,22 @@ export default function SubmissionForm() {
           />
           {errors.companyName && (
             <p className="text-red-500 text-xs mt-1">{errors.companyName}</p>
+          )}
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            이메일 주소 <span className="text-red-500">*</span>
+          </label>
+          <input
+            type="email"
+            value={submitterEmail}
+            onChange={(e) => setSubmitterEmail(e.target.value)}
+            maxLength={200}
+            placeholder="예: contact@company.co.kr"
+            className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+          />
+          {errors.submitterEmail && (
+            <p className="text-red-500 text-xs mt-1">{errors.submitterEmail}</p>
           )}
         </div>
         <div>

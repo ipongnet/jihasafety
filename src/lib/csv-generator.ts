@@ -12,17 +12,19 @@ interface CSVData {
   latitude?: number | null;
   longitude?: number | null;
   companyName: string;
+  submitterEmail: string;
   replyEmail: string;
 }
 
 export function generateAddressCSV(data: CSVData): string {
   const BOM = "\uFEFF";
-  const headers = ["제출일시", "업체명", "전체주소", "시/도", "시/군/구", "위도", "경도", "회신주소"];
+  const headers = ["제출일시", "업체명", "신청자 이메일", "전체주소", "시/도", "시/군/구", "위도", "경도", "회신주소"];
   const now = new Date().toLocaleString("ko-KR", { timeZone: "Asia/Seoul" });
 
   const row = [
     escapeCSV(now),
     escapeCSV(data.companyName),
+    escapeCSV(data.submitterEmail),
     escapeCSV(data.fullAddress),
     escapeCSV(data.sido),
     escapeCSV(data.sigungu),

@@ -41,6 +41,7 @@ model Submission {
   sigungu               String
   latitude              Float?
   longitude             Float?
+  submitterEmail        String?
   emailSentTo           String?
   status                String
   consentGiven          Boolean      @default(true)
