@@ -1,5 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 
+// V-World는 한국 정부 API라 해외 IP 차단 가능 → 서울 리전에서 실행
+export const runtime = "nodejs";
+export const preferredRegion = "icn1";
+
 const SIDO_MAP: Record<string, string> = {
   "서울 ": "서울특별시 ", "부산 ": "부산광역시 ", "대구 ": "대구광역시 ",
   "인천 ": "인천광역시 ", "광주 ": "광주광역시 ", "대전 ": "대전광역시 ",
