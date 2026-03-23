@@ -2,12 +2,6 @@
 
 import { useState } from "react";
 
-declare global {
-  interface Window {
-    daum: { Postcode: new (options: { oncomplete: (data: DaumPostcodeResult) => void }) => { open: () => void } };
-  }
-}
-
 interface DaumPostcodeResult {
   sido: string;
   sigungu: string;

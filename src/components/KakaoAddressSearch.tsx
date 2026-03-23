@@ -9,7 +9,7 @@ declare global {
         oncomplete: (data: DaumPostcodeResult) => void;
         width?: string | number;
         height?: string | number;
-      }) => { embed: (el: HTMLElement) => void };
+      }) => { embed: (el: HTMLElement) => void; open: () => void };
     };
   }
 }
