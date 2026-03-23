@@ -33,9 +33,20 @@ export async function findContact(sido: string, sigungu: string) {
   });
   if (exact) return exact;
 
-  // 2) sigungu만으로 매칭
+  // 2) sigungu만으로 정확 매칭
   const bySigungu = await prisma.cityContact.findFirst({
     where: { sigungu },
   });
-  return bySigungu;
+  if (bySigungu) return bySigungu;
+
+  // 3) 시 단위 매칭: "수원시 영통구" → "수원시" 로 등록된 담당자 찾기
+  const cityPart = sigungu.split(" ")[0];
+  if (cityPart !== sigungu) {
+    const byCity = await prisma.cityContact.findFirst({
+      where: { sido: normalizedSido, sigungu: cityPart },
+    });
+    if (byCity) return byCity;
+  }
+
+  return null;
 }
