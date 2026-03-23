@@ -3,7 +3,7 @@
 export default function LogoutButton() {
   const handleLogout = async () => {
     await fetch("/api/auth", { method: "DELETE", credentials: "include" });
-    window.location.assign("/admin");
+    window.location.assign("/sibum_bundang");
   };
 
   return (

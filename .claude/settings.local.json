@@ -17,7 +17,27 @@
       "Bash(npm show:*)",
       "Bash(git add:*)",
       "Bash(git commit:*)",
-      "Bash(wait)"
+      "Bash(wait)",
+      "mcp__claude_ai_Notion__notion-search",
+      "mcp__claude_ai_Notion__notion-fetch",
+      "mcp__claude_ai_Notion__notion-create-pages",
+      "Skill(update-config)",
+      "WebFetch(domain:dapi.kakao.com)",
+      "Bash(cp:*)",
+      "Bash(xargs sed:*)"
+    ]
+  },
+  "hooks": {
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "cd /Users/wan/Desktop/JihaSafety && git add -A -- ':!.env' ':!.env.local' ':!.claude/settings.local.json' 2>/dev/null; git diff --cached --quiet || (git commit -m \"auto: $(git diff --cached --name-only | tr '\\n' ' ' | sed 's/ $//')\" && git push origin main) 2>/dev/null || true",
+            "statusMessage": "변경사항 커밋 및 푸시 중..."
+          }
+        ]
+      }
     ]
   }
 }

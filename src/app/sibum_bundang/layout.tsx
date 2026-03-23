@@ -1,5 +1,5 @@
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
-  // /admin 로그인 페이지 자체는 세션 체크 제외
+  // /sibum_bundang 로그인 페이지 자체는 세션 체크 제외
   return <>{children}</>;
 }
 

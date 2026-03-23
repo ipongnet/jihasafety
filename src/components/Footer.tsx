@@ -27,7 +27,7 @@ export default function Footer() {
             <ul className="space-y-2 text-sm">
               <li><Link href="/" className="hover:text-white transition-colors">홈</Link></li>
               <li><Link href="/" className="hover:text-white transition-colors">접수하기</Link></li>
-              <li><Link href="/admin" className="hover:text-white transition-colors">관리자 로그인</Link></li>
+              <li><Link href="/sibum_bundang" className="hover:text-white transition-colors">관리자 로그인</Link></li>
             </ul>
           </div>
 

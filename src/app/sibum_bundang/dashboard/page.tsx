@@ -12,7 +12,7 @@ interface Props {
 
 export default async function DashboardPage({ searchParams }: Props) {
   const ok = await getSession();
-  if (!ok) redirect("/admin?reason=nosession");
+  if (!ok) redirect("/sibum_bundang?reason=nosession");
 
   const { tab } = await searchParams;
   const activeTab = tab === "submissions" ? "submissions" : "contacts";
@@ -66,7 +66,7 @@ export default async function DashboardPage({ searchParams }: Props) {
         {/* 탭 */}
         <div className="flex gap-1 mb-6 border-b border-gray-200">
           <Link
-            href="/admin/dashboard?tab=contacts"
+            href="/sibum_bundang/dashboard?tab=contacts"
             className={`px-5 py-2.5 text-sm font-medium border-b-2 transition-colors -mb-px ${
               activeTab === "contacts"
                 ? "border-blue-600 text-blue-600"
@@ -76,7 +76,7 @@ export default async function DashboardPage({ searchParams }: Props) {
             지역 담당자 관리
           </Link>
           <Link
-            href="/admin/dashboard?tab=submissions"
+            href="/sibum_bundang/dashboard?tab=submissions"
             className={`px-5 py-2.5 text-sm font-medium border-b-2 transition-colors -mb-px ${
               activeTab === "submissions"
                 ? "border-blue-600 text-blue-600"

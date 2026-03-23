@@ -14,7 +14,7 @@ export default function AdminLoginPage() {
       setError(
         "대시보드에 들어가려면 세션 쿠키가 필요합니다. 비밀번호를 다시 입력하거나, 브라우저가 쿠키를 막고 있지 않은지 확인하세요."
       );
-      window.history.replaceState({}, "", "/admin");
+      window.history.replaceState({}, "", "/sibum_bundang");
     }
   }, []);
 
@@ -42,7 +42,7 @@ export default function AdminLoginPage() {
 
       if (data.success) {
         redirecting = true;
-        window.location.assign("/admin/dashboard");
+        window.location.assign("/sibum_bundang/dashboard");
         return;
       }
 
