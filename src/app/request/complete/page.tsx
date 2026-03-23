@@ -8,7 +8,6 @@ import Footer from "@/components/Footer";
 interface SubmissionResult {
   emailSentTo: string | null;
   contact: {
-    personName: string;
     department: string | null;
     phone: string;
   } | null;
@@ -42,31 +41,22 @@ export default function CompletePage() {
 
           {result && (
             <div className="bg-white rounded-xl border border-gray-200 p-5 mb-8 text-left space-y-3">
-              {result.emailSentTo && (
-                <div className="flex items-start gap-3">
-                  <span className="text-xs font-medium text-gray-400 w-20 shrink-0 pt-0.5">수신자 메일</span>
-                  <span className="text-sm text-blue-600 break-all">{result.emailSentTo}</span>
-                </div>
-              )}
-              {result.contact?.personName && (
-                <div className="flex items-start gap-3">
-                  <span className="text-xs font-medium text-gray-400 w-20 shrink-0 pt-0.5">담당자</span>
-                  <span className="text-sm text-gray-800">{result.contact.personName}</span>
-                </div>
-              )}
-              {result.contact?.department && (
-                <div className="flex items-start gap-3">
-                  <span className="text-xs font-medium text-gray-400 w-20 shrink-0 pt-0.5">부서</span>
-                  <span className="text-sm text-gray-800">{result.contact.department}</span>
-                </div>
-              )}
-              {result.contact?.phone && (
-                <div className="flex items-start gap-3">
-                  <span className="text-xs font-medium text-gray-400 w-20 shrink-0 pt-0.5">연락처</span>
-                  <span className="text-sm text-gray-800">{result.contact.phone}</span>
-                </div>
-              )}
-              {!result.emailSentTo && (
+              {result.contact ? (
+                <>
+                  {result.contact.department && (
+                    <div className="flex items-start gap-3">
+                      <span className="text-xs font-medium text-gray-400 w-20 shrink-0 pt-0.5">담당부서</span>
+                      <span className="text-sm text-gray-800">{result.contact.department}</span>
+                    </div>
+                  )}
+                  {result.contact.phone && (
+                    <div className="flex items-start gap-3">
+                      <span className="text-xs font-medium text-gray-400 w-20 shrink-0 pt-0.5">연락처</span>
+                      <span className="text-sm text-gray-800">{result.contact.phone}</span>
+                    </div>
+                  )}
+                </>
+              ) : (
                 <p className="text-sm text-amber-600">해당 지역 담당자가 등록되어 있지 않습니다.</p>
               )}
             </div>

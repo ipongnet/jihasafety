@@ -169,13 +169,23 @@ export async function POST(request: NextRequest) {
       // DB 저장 실패 시 요청은 계속 처리 (이메일은 이미 발송됨)
     }
 
+    let departmentDisplay: string | null = null;
+    if (contact?.department) {
+      const dept = await prisma.department.findFirst({ where: { name: contact.department } });
+      if (dept?.parentId) {
+        const parent = await prisma.department.findUnique({ where: { id: dept.parentId } });
+        departmentDisplay = parent ? `${parent.name} > ${dept.name}` : dept.name;
+      } else {
+        departmentDisplay = dept?.name ?? contact.department;
+      }
+    }
+
     return NextResponse.json({
       success: true,
       submissionId,
       emailSentTo,
       contact: contact ? {
-        personName: contact.personName,
-        department: contact.department ?? null,
+        department: departmentDisplay,
         phone: contact.phone,
       } : null,
     });
