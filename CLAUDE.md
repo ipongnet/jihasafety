@@ -5,7 +5,7 @@
 
 ## 기술 스택
 - **프레임워크**: Next.js 15 (App Router) + TypeScript + Tailwind CSS
-- **지도**: Kakao Maps API + Daum Postcode API (API 키 필요: `NEXT_PUBLIC_KAKAO_APP_KEY`)
+- **지도**: Daum Postcode API (주소 검색) + V-World API (지오코딩, 서버사이드) + OpenStreetMap (지도 표시, 무료)
 - **이메일**: Nodemailer (Gmail SMTP)
 - **DB**: Prisma 6 + PostgreSQL (Vercel Postgres / Neon)
 - **인증**: 쿠키 기반 관리자 인증 (bcryptjs)
@@ -100,8 +100,8 @@ POSTGRES_URL_NON_POOLING="..."
 GMAIL_USER="your-email@gmail.com"
 GMAIL_APP_PASSWORD="your-app-password"
 
-# Kakao Maps (Kakao Developers에서 JavaScript 키 발급)
-NEXT_PUBLIC_KAKAO_APP_KEY="your-kakao-js-key"
+# V-World API (국토지리정보원 브이월드 - 지오코딩)
+VWORLD_API_KEY="your-vworld-api-key"
 
 # 관리자 인증
 ADMIN_PASSWORD_HASH="\$2b\$10\$..."   # $ 앞에 \ 이스케이프 필요 (.env.local 한정)
@@ -111,12 +111,11 @@ SESSION_SECRET="random-secret-string"
 > **주의**: `.env.local`에서 bcrypt 해시의 `$` 기호는 `\$`로 이스케이프 필요 (dotenv-expand 오작동 방지).
 > Vercel 대시보드에 직접 입력할 때는 이스케이프 없이 원본 값 그대로 입력.
 
-## Kakao Maps 설정
-1. https://developers.kakao.com 에서 앱 생성
-2. **JavaScript 키** 복사 → `NEXT_PUBLIC_KAKAO_APP_KEY`
-3. 플랫폼 등록 (Web): `http://localhost:3000`, Vercel 배포 주소
-4. **카카오맵 서비스 활성화** 필수: 앱 → 카카오맵 → 활성화 ON
-5. `NEXT_PUBLIC_KAKAO_APP_KEY`는 빌드 시 번들에 내장 → 변경 시 Vercel Redeploy 필요
+## V-World API 설정
+1. https://www.vworld.kr 에서 회원가입 후 API 키 발급
+2. `VWORLD_API_KEY` 환경변수 설정 (서버사이드 전용 — 브라우저 노출 없음)
+3. `/api/geocode?address=주소` 로 호출 → `{ lat, lng }` 반환
+4. 지도 표시: OpenStreetMap iframe (API 키 불필요)
 
 ## 파일 첨부 기능 (시공업체 → 담당자)
 - 허용 형식: 이미지(jpg, png), PDF, 문서(hwp, doc, docx, xlsx)

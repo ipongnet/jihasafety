@@ -5,38 +5,6 @@ import { useRouter } from "next/navigation";
 import KakaoAddressSearch from "./KakaoAddressSearch";
 import type { AddressData, FormErrors } from "@/types";
 
-declare global {
-  interface Window {
-    kakao: {
-      maps: {
-        load: (callback: () => void) => void;
-        Map: new (container: HTMLElement, options: object) => KakaoMapInstance;
-        LatLng: new (lat: number, lng: number) => object;
-        Marker: new (options: object) => KakaoMarker;
-        services: {
-          Geocoder: new () => KakaoGeocoder;
-          Status: { OK: string };
-        };
-      };
-    };
-  }
-}
-
-interface KakaoMapInstance {
-  setCenter: (latlng: object) => void;
-}
-
-interface KakaoMarker {
-  setMap: (map: KakaoMapInstance | null) => void;
-}
-
-interface KakaoGeocoder {
-  addressSearch: (
-    address: string,
-    callback: (result: Array<{ x: string; y: string }>, status: string) => void
-  ) => void;
-}
-
 const ALLOWED_EXTENSIONS = ["jpg", "jpeg", "png", "pdf", "hwp", "doc", "docx", "xlsx"];
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 const MAX_TOTAL_SIZE = 10 * 1024 * 1024; // 10MB
@@ -59,10 +27,6 @@ export default function SubmissionForm() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState<FormErrors>({});
 
-  const mapContainerRef = useRef<HTMLDivElement>(null);
-  const mapRef = useRef<KakaoMapInstance | null>(null);
-  const markerRef = useRef<KakaoMarker | null>(null);
-
   const handleAddressComplete = useCallback(
     (data: { fullAddress: string; sido: string; sigungu: string; zonecode: string }) => {
       setAddress(data);
@@ -76,73 +40,16 @@ export default function SubmissionForm() {
     []
   );
 
-  // 주소 선택 시 Kakao Maps 지오코딩 + 지도 초기화
+  // 주소 선택 시 V-World 지오코딩
   useEffect(() => {
-    if (!address || !mapContainerRef.current) return;
+    if (!address) return;
+    setMapCoords(null);
+    setMapError(null);
 
-    const initMap = () => {
-      if (!mapContainerRef.current || !window.kakao?.maps) return;
-
-      const geocoder = new window.kakao.maps.services.Geocoder();
-      geocoder.addressSearch(address.fullAddress, (result, status) => {
-        if (status !== window.kakao.maps.services.Status.OK || !result[0]) {
-          setMapError("주소의 좌표를 찾을 수 없습니다. 지도 없이 접수할 수 있습니다.");
-          return;
-        }
-
-        const lat = parseFloat(result[0].y);
-        const lng = parseFloat(result[0].x);
-        const latlng = new window.kakao.maps.LatLng(lat, lng);
-
-        if (!mapRef.current && mapContainerRef.current) {
-          mapRef.current = new window.kakao.maps.Map(mapContainerRef.current, {
-            center: latlng,
-            level: 3,
-          });
-        } else {
-          mapRef.current?.setCenter(latlng);
-        }
-
-        markerRef.current?.setMap(null);
-        markerRef.current = new window.kakao.maps.Marker({ position: latlng });
-        markerRef.current.setMap(mapRef.current!);
-
-        setMapCoords({ lat, lng });
-      });
-    };
-
-    const loadKakaoMap = () => {
-      // 이미 SDK 로드 완료
-      if (window.kakao?.maps?.load) {
-        window.kakao.maps.load(initMap);
-        return;
-      }
-
-      const appKey = process.env.NEXT_PUBLIC_KAKAO_APP_KEY;
-      if (!appKey) {
-        setMapError("NEXT_PUBLIC_KAKAO_APP_KEY가 설정되지 않았습니다.");
-        return;
-      }
-
-      // 이전 로드 실패한 스크립트가 남아있으면 제거 후 재시도
-      const existingScript = document.getElementById("kakao-map-script");
-      if (existingScript && !window.kakao?.maps) {
-        existingScript.remove();
-      }
-
-      if (window.kakao?.maps) {
-        window.kakao.maps.load(initMap);
-      } else {
-        const script = document.createElement("script");
-        script.id = "kakao-map-script";
-        script.src = `https://dapi.kakao.com/v2/maps/sdk.js?appkey=${appKey}&libraries=services&autoload=false`;
-        script.onload = () => window.kakao.maps.load(initMap);
-        script.onerror = () => setMapError("카카오맵 스크립트 로드에 실패했습니다. 잠시 후 다시 시도해주세요.");
-        document.head.appendChild(script);
-      }
-    };
-
-    loadKakaoMap();
+    fetch(`/api/geocode?address=${encodeURIComponent(address.fullAddress)}`)
+      .then((res) => res.ok ? res.json() : Promise.reject(res))
+      .then(({ lat, lng }) => setMapCoords({ lat, lng }))
+      .catch(() => setMapError("주소의 좌표를 찾을 수 없습니다. 지도 없이 접수할 수 있습니다."));
   }, [address]);
 
   const validateFile = (file: File): string | null => {
@@ -363,12 +270,16 @@ export default function SubmissionForm() {
               <div style={{ height: 280 }} className="bg-gray-100 w-full flex items-center justify-center">
                 <p className="text-sm text-red-500">{mapError}</p>
               </div>
-            ) : (
-              <div
-                ref={mapContainerRef}
+            ) : mapCoords ? (
+              <iframe
+                src={`https://www.openstreetmap.org/export/embed.html?bbox=${mapCoords.lng - 0.005},${mapCoords.lat - 0.005},${mapCoords.lng + 0.005},${mapCoords.lat + 0.005}&layer=mapnik&marker=${mapCoords.lat},${mapCoords.lng}`}
                 style={{ height: 280 }}
-                className="bg-gray-100 w-full"
+                className="w-full border-0"
               />
+            ) : (
+              <div style={{ height: 280 }} className="bg-gray-100 w-full flex items-center justify-center">
+                <p className="text-sm text-gray-400">좌표 변환 중...</p>
+              </div>
             )}
             <div className="px-4 py-3 bg-gray-50 border-t border-gray-200">
               <label className="flex items-center gap-2.5 cursor-pointer">
