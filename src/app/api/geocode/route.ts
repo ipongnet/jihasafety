@@ -48,7 +48,7 @@ export async function GET(request: NextRequest) {
       const res = await fetch(url, { next: { revalidate: 0 } });
       const text = await res.text();
       let data;
-      try { data = JSON.parse(text); } catch { errors.push(`${type}: invalid JSON`); continue; }
+      try { data = JSON.parse(text); } catch { errors.push(`${type}: invalid JSON: ${text.slice(0, 200)}`); continue; }
       if (data.response?.status === "OK" && data.response.result?.point) {
         const { x, y } = data.response.result.point;
         return NextResponse.json({ lat: parseFloat(y), lng: parseFloat(x) });
