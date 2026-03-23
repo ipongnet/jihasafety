@@ -41,18 +41,24 @@ export async function GET(request: NextRequest) {
   };
 
   // 도로명 먼저 시도, 실패 시 지번으로 재시도
+  const errors: string[] = [];
   for (const type of ["road", "parcel"] as const) {
     try {
-      const res = await fetch(buildUrl(type), { next: { revalidate: 0 } });
-      const data = await res.json();
+      const url = buildUrl(type);
+      const res = await fetch(url, { next: { revalidate: 0 } });
+      const text = await res.text();
+      let data;
+      try { data = JSON.parse(text); } catch { errors.push(`${type}: invalid JSON`); continue; }
       if (data.response?.status === "OK" && data.response.result?.point) {
         const { x, y } = data.response.result.point;
         return NextResponse.json({ lat: parseFloat(y), lng: parseFloat(x) });
       }
-    } catch {
-      // 다음 타입으로 시도
+      errors.push(`${type}: status=${data.response?.status}, msg=${data.response?.error?.text ?? "none"}`);
+    } catch (e) {
+      errors.push(`${type}: fetch error: ${e instanceof Error ? e.message : String(e)}`);
     }
   }
 
-  return NextResponse.json({ error: "주소의 좌표를 찾을 수 없습니다." }, { status: 404 });
+  console.error("[geocode] failed", { address, errors });
+  return NextResponse.json({ error: "주소의 좌표를 찾을 수 없습니다.", debug: { address, errors } }, { status: 404 });
 }
