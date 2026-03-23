@@ -122,7 +122,7 @@ export default function ContactsClient({ contacts, departments }: { contacts: Co
             {loading ? "로딩 중..." : "주소 검색"}
           </button>
           {searchAddress && (
-            <span className="text-sm text-gray-600 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 flex-1 flex items-center truncate">
+            <span className="text-xs text-gray-500 bg-gray-50 border border-gray-200 rounded-md px-2.5 py-1.5 flex-1 flex items-center truncate">
               {searchAddress}
             </span>
           )}
