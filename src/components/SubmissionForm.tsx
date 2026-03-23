@@ -5,6 +5,20 @@ import { useRouter } from "next/navigation";
 import KakaoAddressSearch from "./KakaoAddressSearch";
 import type { AddressData, FormErrors } from "@/types";
 
+declare global {
+  interface Window {
+    vw: {
+      Map: new (container: HTMLElement, options: {
+        basemap: string;
+        center: object;
+        zoom: number;
+      }) => { setCenter: (coord: object) => void };
+      CoordZ: new (x: number, y: number, z: number) => object;
+      Marker: new (options: { id: string; position: object; map: object }) => void;
+    };
+  }
+}
+
 const ALLOWED_EXTENSIONS = ["jpg", "jpeg", "png", "pdf", "hwp", "doc", "docx", "xlsx"];
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 const MAX_TOTAL_SIZE = 10 * 1024 * 1024; // 10MB
@@ -27,14 +41,16 @@ export default function SubmissionForm() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState<FormErrors>({});
 
+  const mapContainerRef = useRef<HTMLDivElement>(null);
+  const vwMapRef = useRef<object | null>(null);
+
   const handleAddressComplete = useCallback(
     (data: { fullAddress: string; sido: string; sigungu: string; zonecode: string }) => {
       setAddress(data);
       setMapCoords(null);
       setLocationConfirmed(false);
       setMapError(null);
-      mapRef.current = null;
-      markerRef.current = null;
+      vwMapRef.current = null;
       setErrors((prev) => ({ ...prev, address: undefined, locationConfirmed: undefined }));
     },
     []
@@ -51,6 +67,51 @@ export default function SubmissionForm() {
       .then(({ lat, lng }) => setMapCoords({ lat, lng }))
       .catch(() => setMapError("주소의 좌표를 찾을 수 없습니다. 지도 없이 접수할 수 있습니다."));
   }, [address]);
+
+  // 좌표 획득 후 V-World 지도 초기화
+  useEffect(() => {
+    if (!mapCoords || !mapContainerRef.current) return;
+    const { lat, lng } = mapCoords;
+    const apiKey = process.env.NEXT_PUBLIC_VWORLD_API_KEY;
+    if (!apiKey) return;
+
+    const initMap = () => {
+      if (!mapContainerRef.current || !window.vw) return;
+      try {
+        const center = new window.vw.CoordZ(lng, lat, 500);
+        if (vwMapRef.current) {
+          (vwMapRef.current as { setCenter: (c: object) => void }).setCenter(center);
+        } else {
+          const map = new window.vw.Map(mapContainerRef.current, {
+            basemap: "GRAPHIC",
+            center,
+            zoom: 15,
+          });
+          vwMapRef.current = map;
+          new window.vw.Marker({
+            id: "construction-site",
+            position: new window.vw.CoordZ(lng, lat, 0),
+            map,
+          });
+        }
+      } catch {
+        setMapError("지도를 불러오는데 실패했습니다. 지도 없이 접수할 수 있습니다.");
+      }
+    };
+
+    if (window.vw) {
+      initMap();
+    } else {
+      const existing = document.getElementById("vworld-map-script");
+      if (existing) { existing.addEventListener("load", initMap); return; }
+      const script = document.createElement("script");
+      script.id = "vworld-map-script";
+      script.src = `https://map.vworld.kr/js/vworldMapInit.js.do?version=2.0&apiKey=${apiKey}`;
+      script.onload = initMap;
+      script.onerror = () => setMapError("V-World 지도 스크립트 로드에 실패했습니다. 지도 없이 접수할 수 있습니다.");
+      document.head.appendChild(script);
+    }
+  }, [mapCoords]);
 
   const validateFile = (file: File): string | null => {
     const ext = file.name.split(".").pop()?.toLowerCase() ?? "";
@@ -270,15 +331,14 @@ export default function SubmissionForm() {
               <div style={{ height: 280 }} className="bg-gray-100 w-full flex items-center justify-center">
                 <p className="text-sm text-red-500">{mapError}</p>
               </div>
-            ) : mapCoords ? (
-              <iframe
-                src={`https://www.openstreetmap.org/export/embed.html?bbox=${mapCoords.lng - 0.005},${mapCoords.lat - 0.005},${mapCoords.lng + 0.005},${mapCoords.lat + 0.005}&layer=mapnik&marker=${mapCoords.lat},${mapCoords.lng}`}
-                style={{ height: 280 }}
-                className="w-full border-0"
-              />
             ) : (
-              <div style={{ height: 280 }} className="bg-gray-100 w-full flex items-center justify-center">
-                <p className="text-sm text-gray-400">좌표 변환 중...</p>
+              <div style={{ height: 280 }} className="relative bg-gray-100 w-full">
+                <div ref={mapContainerRef} style={{ height: 280 }} className="w-full" />
+                {!mapCoords && (
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <p className="text-sm text-gray-400">좌표 변환 중...</p>
+                  </div>
+                )}
               </div>
             )}
             <div className="px-4 py-3 bg-gray-50 border-t border-gray-200">
