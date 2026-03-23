@@ -18,8 +18,13 @@ interface CSVData {
 
 export function generateAddressCSV(data: CSVData): string {
   const BOM = "\uFEFF";
-  const headers = ["제출일시", "업체명", "신청자 이메일", "전체주소", "시/도", "시/군/구", "위도", "경도", "회신주소"];
+  const headers = ["제출일시", "업체명", "신청자 이메일", "전체주소", "시/도", "시/군/구", "위도", "경도", "GeoJSON", "회신주소"];
   const now = new Date().toLocaleString("ko-KR", { timeZone: "Asia/Seoul" });
+
+  const geojson =
+    data.latitude != null && data.longitude != null
+      ? escapeCSV(JSON.stringify({ type: "Point", coordinates: [data.longitude, data.latitude] }))
+      : "";
 
   const row = [
     escapeCSV(now),
@@ -30,6 +35,7 @@ export function generateAddressCSV(data: CSVData): string {
     escapeCSV(data.sigungu),
     data.latitude?.toString() ?? "",
     data.longitude?.toString() ?? "",
+    geojson,
     escapeCSV(data.replyEmail),
   ];
 
