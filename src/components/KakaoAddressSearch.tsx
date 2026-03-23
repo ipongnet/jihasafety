@@ -34,7 +34,9 @@ interface Props {
 
 export default function KakaoAddressSearch({ onComplete }: Props) {
   const [open, setOpen] = useState(false);
+  const [scriptReady, setScriptReady] = useState(false);
 
+  // postcodeRef deps에 scriptReady 포함 → 스크립트 로드 완료 시 ref 콜백이 재실행됨
   const postcodeRef = useCallback(
     (node: HTMLDivElement | null) => {
       if (!node || !open || !window.daum?.Postcode) return;
@@ -52,15 +54,22 @@ export default function KakaoAddressSearch({ onComplete }: Props) {
         height: "100%",
       }).embed(node);
     },
-    [open, onComplete]
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [open, onComplete, scriptReady]
   );
 
   useEffect(() => {
+    // 이미 로드된 경우
+    if (window.daum?.Postcode) {
+      setScriptReady(true);
+      return;
+    }
     if (document.getElementById("daum-postcode-script")) return;
     const s = document.createElement("script");
     s.id = "daum-postcode-script";
     s.src = "https://t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js";
     s.async = true;
+    s.onload = () => setScriptReady(true);
     document.head.appendChild(s);
   }, []);
 

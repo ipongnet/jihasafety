@@ -70,7 +70,7 @@ export async function POST(request: NextRequest) {
         if (!ALLOWED_EXTENSIONS.has(ext)) {
           return NextResponse.json({ success: false, message: `허용되지 않는 파일 형식입니다: ${entry.name}` }, { status: 400 });
         }
-        if (entry.size > 10 * 1024 * 1024) {
+        if (entry.size > 5 * 1024 * 1024) {
           return NextResponse.json({ success: false, message: `파일 크기 초과: ${entry.name}` }, { status: 400 });
         }
         const buffer = Buffer.from(await entry.arrayBuffer());

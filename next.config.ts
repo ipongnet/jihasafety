@@ -5,8 +5,8 @@ const isDev = process.env.NODE_ENV === "development";
 /** 개발 모드에서 Next(Fast Refresh 등)는 eval·ws가 필요해, 엄격 CSP만 두면 하이드레이션 실패로 흰 화면이 날 수 있음 */
 function contentSecurityPolicy(): string {
   const scriptSrc = isDev
-    ? "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://*.daumcdn.net https://dapi.kakao.com"
-    : "script-src 'self' 'unsafe-inline' https://*.daumcdn.net https://dapi.kakao.com";
+    ? "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://*.daumcdn.net https://dapi.kakao.com https://*.kakao.com"
+    : "script-src 'self' 'unsafe-inline' https://*.daumcdn.net https://dapi.kakao.com https://*.kakao.com";
   const connectSrc = isDev
     ? "connect-src 'self' ws: wss: https://*.daumcdn.net https://dapi.kakao.com https://*.kakao.com"
     : "connect-src 'self' https://*.daumcdn.net https://dapi.kakao.com https://*.kakao.com";

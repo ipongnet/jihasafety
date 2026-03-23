@@ -38,7 +38,7 @@ interface KakaoGeocoder {
 }
 
 const ALLOWED_EXTENSIONS = ["jpg", "jpeg", "png", "pdf", "hwp", "doc", "docx", "xlsx"];
-const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
+const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 const MAX_TOTAL_SIZE = 50 * 1024 * 1024; // 50MB
 
 export default function SubmissionForm() {
@@ -139,7 +139,7 @@ export default function SubmissionForm() {
       return `허용되지 않는 파일 형식입니다: ${file.name}`;
     }
     if (file.size > MAX_FILE_SIZE) {
-      return `파일 크기가 10MB를 초과합니다: ${file.name}`;
+      return `파일 크기가 5MB를 초과합니다: ${file.name}`;
     }
     return null;
   };
@@ -381,7 +381,7 @@ export default function SubmissionForm() {
               클릭하여 파일 선택
             </button>
           </span>
-          <span className="text-xs text-gray-400 shrink-0">파일당 10MB · 총 50MB</span>
+          <span className="text-xs text-gray-400 shrink-0">파일당 5MB · 총 50MB</span>
           <input
             ref={fileInputRef}
             type="file"
