@@ -21,7 +21,7 @@ interface EmailData {
 }
 
 export function buildEmailSubject(data: EmailData): string {
-  return `[굴착공사 안전신고] ${data.projectName} - ${data.sigungu}`;
+  return `[지하시설물 유관기관 협의서 요청] ${data.projectName}_${data.sigungu}`;
 }
 
 export function buildEmailHTML(data: EmailData): string {
@@ -63,14 +63,6 @@ export function buildEmailHTML(data: EmailData): string {
         <tr>
           <td style="padding:10px 12px;background:#f8fafc;font-weight:600;border-bottom:1px solid #e2e8f0;">공사위치</td>
           <td style="padding:10px 12px;border-bottom:1px solid #e2e8f0;">${e.fullAddress}</td>
-        </tr>
-        <tr>
-          <td style="padding:10px 12px;background:#f8fafc;font-weight:600;border-bottom:1px solid #e2e8f0;">시/도</td>
-          <td style="padding:10px 12px;border-bottom:1px solid #e2e8f0;">${e.sido}</td>
-        </tr>
-        <tr>
-          <td style="padding:10px 12px;background:#f8fafc;font-weight:600;border-bottom:1px solid #e2e8f0;">시/군/구</td>
-          <td style="padding:10px 12px;border-bottom:1px solid #e2e8f0;">${e.sigungu}</td>
         </tr>
         ${data.latitude && data.longitude ? `
         <tr>
