@@ -123,16 +123,20 @@ export default function SubmissionForm() {
         return;
       }
 
-      const existingScript = document.getElementById("kakao-map-script") as HTMLScriptElement | null;
-      if (existingScript) {
-        // 스크립트 태그는 있지만 아직 로드 중 — onload 이벤트로 대기
-        existingScript.addEventListener("load", () => window.kakao.maps.load(initMap), { once: true });
+      // 이전 로드 실패한 스크립트가 남아있으면 제거 후 재시도
+      const existingScript = document.getElementById("kakao-map-script");
+      if (existingScript && !window.kakao?.maps) {
+        existingScript.remove();
+      }
+
+      if (window.kakao?.maps) {
+        window.kakao.maps.load(initMap);
       } else {
         const script = document.createElement("script");
         script.id = "kakao-map-script";
         script.src = `https://dapi.kakao.com/v2/maps/sdk.js?appkey=${appKey}&libraries=services&autoload=false`;
         script.onload = () => window.kakao.maps.load(initMap);
-        script.onerror = () => setMapError("카카오맵 스크립트 로드에 실패했습니다.");
+        script.onerror = () => setMapError("카카오맵 스크립트 로드에 실패했습니다. 잠시 후 다시 시도해주세요.");
         document.head.appendChild(script);
       }
     };
