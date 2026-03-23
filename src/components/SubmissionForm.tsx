@@ -84,7 +84,10 @@ export default function SubmissionForm() {
 
       const geocoder = new window.kakao.maps.services.Geocoder();
       geocoder.addressSearch(address.fullAddress, (result, status) => {
-        if (status !== window.kakao.maps.services.Status.OK || !result[0]) return;
+        if (status !== window.kakao.maps.services.Status.OK || !result[0]) {
+          setMapError("주소의 좌표를 찾을 수 없습니다. 지도 없이 접수할 수 있습니다.");
+          return;
+        }
 
         const lat = parseFloat(result[0].y);
         const lng = parseFloat(result[0].x);
@@ -108,6 +111,7 @@ export default function SubmissionForm() {
     };
 
     const loadKakaoMap = () => {
+      // 이미 SDK 로드 완료
       if (window.kakao?.maps?.load) {
         window.kakao.maps.load(initMap);
         return;
@@ -119,14 +123,17 @@ export default function SubmissionForm() {
         return;
       }
 
-      if (!document.getElementById("kakao-map-script")) {
+      const existingScript = document.getElementById("kakao-map-script") as HTMLScriptElement | null;
+      if (existingScript) {
+        // 스크립트 태그는 있지만 아직 로드 중 — onload 이벤트로 대기
+        existingScript.addEventListener("load", () => window.kakao.maps.load(initMap), { once: true });
+      } else {
         const script = document.createElement("script");
         script.id = "kakao-map-script";
         script.src = `https://dapi.kakao.com/v2/maps/sdk.js?appkey=${appKey}&libraries=services&autoload=false`;
         script.onload = () => window.kakao.maps.load(initMap);
+        script.onerror = () => setMapError("카카오맵 스크립트 로드에 실패했습니다.");
         document.head.appendChild(script);
-      } else {
-        window.kakao.maps.load(initMap);
       }
     };
 
@@ -183,7 +190,7 @@ export default function SubmissionForm() {
     }
 
     if (!address) newErrors.address = "공사 위치를 검색해주세요.";
-    else if (!locationConfirmed) newErrors.locationConfirmed = "지도에서 위치를 확인해주세요.";
+    else if (!locationConfirmed && !mapError) newErrors.locationConfirmed = "지도에서 위치를 확인해주세요.";
 
     if (!consentChecked) newErrors.consentGiven = "개인정보 수집에 동의해주세요.";
 
