@@ -9,12 +9,14 @@ export async function GET() {
 
 export async function POST(request: NextRequest) {
   if (!(await getSession())) return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
-  const { name } = await request.json();
+  const { name, parentId } = await request.json();
   if (!name || typeof name !== "string" || !name.trim()) {
     return NextResponse.json({ message: "부서명을 입력해주세요." }, { status: 400 });
   }
   try {
-    const dept = await prisma.department.create({ data: { name: name.trim() } });
+    const dept = await prisma.department.create({
+      data: { name: name.trim(), parentId: parentId ?? null },
+    });
     return NextResponse.json(dept, { status: 201 });
   } catch {
     return NextResponse.json({ message: "이미 존재하는 부서명입니다." }, { status: 409 });

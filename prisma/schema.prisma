@@ -23,8 +23,11 @@ model CityContact {
 }
 
 model Department {
-  id   Int    @id @default(autoincrement())
-  name String @unique
+  id       Int          @id @default(autoincrement())
+  name     String       @unique
+  parentId Int?
+  parent   Department?  @relation("DeptTree", fields: [parentId], references: [id])
+  children Department[] @relation("DeptTree")
 }
 
 model Submission {

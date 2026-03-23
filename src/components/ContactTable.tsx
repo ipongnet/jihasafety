@@ -60,7 +60,29 @@ function SigunguSelect({ sido, value, onChange, className }: { sido: string; val
   );
 }
 
-interface Department { id: number; name: string; }
+interface Department { id: number; name: string; parentId: number | null; }
+
+function DeptSelect({ value, onChange, departments, className }: { value: string; onChange: (v: string) => void; departments: Department[]; className: string }) {
+  const roots = departments.filter((d) => !d.parentId);
+  const getChildren = (pid: number) => departments.filter((d) => d.parentId === pid);
+  return (
+    <select value={value} onChange={(e) => onChange(e.target.value)} className={className}>
+      <option value="">부서 선택</option>
+      {roots.map((root) => {
+        const kids = getChildren(root.id);
+        return kids.length > 0 ? (
+          <optgroup key={root.id} label={root.name}>
+            {kids.map((child) => (
+              <option key={child.id} value={child.name}>{child.name}</option>
+            ))}
+          </optgroup>
+        ) : (
+          <option key={root.id} value={root.name}>{root.name}</option>
+        );
+      })}
+    </select>
+  );
+}
 
 export default function ContactTable({ initial, initialDepartments }: { initial: Contact[]; initialDepartments: Department[] }) {
   const [contacts, setContacts] = useState<Contact[]>(initial);
@@ -76,7 +98,16 @@ export default function ContactTable({ initial, initialDepartments }: { initial:
   const [departments, setDepartments] = useState<Department[]>(initialDepartments);
   const [showDeptManager, setShowDeptManager] = useState(false);
   const [newDeptName, setNewDeptName] = useState("");
+  const [newDeptParentId, setNewDeptParentId] = useState<number | null>(null);
   const [deptError, setDeptError] = useState("");
+
+  const getDeptDisplay = (deptName: string | null) => {
+    if (!deptName) return "-";
+    const dept = departments.find((d) => d.name === deptName);
+    if (!dept || !dept.parentId) return deptName;
+    const parent = departments.find((d) => d.id === dept.parentId);
+    return parent ? `${parent.name} > ${deptName}` : deptName;
+  };
 
   const addDepartment = async () => {
     if (!newDeptName.trim()) return;
@@ -84,7 +115,7 @@ export default function ContactTable({ initial, initialDepartments }: { initial:
     const res = await fetch("/api/departments", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name: newDeptName.trim() }),
+      body: JSON.stringify({ name: newDeptName.trim(), parentId: newDeptParentId }),
     });
     const data = await res.json();
     if (!res.ok) { setDeptError(data.message); return; }
@@ -95,7 +126,13 @@ export default function ContactTable({ initial, initialDepartments }: { initial:
   const deleteDepartment = async (id: number) => {
     if (!confirm("부서를 삭제하시겠습니까?")) return;
     const res = await fetch(`/api/departments/${id}`, { method: "DELETE" });
-    if (res.ok) setDepartments((prev) => prev.filter((d) => d.id !== id));
+    if (!res.ok) {
+      const data = await res.json();
+      setDeptError(data.message ?? "삭제 실패");
+      return;
+    }
+    setDeptError("");
+    setDepartments((prev) => prev.filter((d) => d.id !== id));
   };
 
   const filtered = contacts.filter(
@@ -218,26 +255,52 @@ export default function ContactTable({ initial, initialDepartments }: { initial:
       {/* 부서 관리 패널 */}
       {showDeptManager && (
         <div className="border border-gray-200 rounded-xl p-4 bg-gray-50 space-y-3">
-          <p className="text-sm font-medium text-gray-700">부서 목록</p>
-          <div className="flex flex-wrap gap-2">
-            {departments.map((d) => (
-              <span key={d.id} className="flex items-center gap-1.5 bg-white border border-gray-200 rounded-lg px-3 py-1.5 text-sm text-gray-700">
-                {d.name}
-                <button onClick={() => deleteDepartment(d.id)} className="text-red-400 hover:text-red-600 ml-1">
-                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
-              </span>
-            ))}
+          <p className="text-sm font-medium text-gray-700">부서 구조</p>
+          <div className="space-y-0.5">
+            {departments.filter((d) => !d.parentId).map((root) => {
+              const kids = departments.filter((d) => d.parentId === root.id);
+              return (
+                <div key={root.id}>
+                  <div className="flex items-center gap-2 py-1.5 px-2 rounded-lg hover:bg-gray-100">
+                    <span className="text-sm font-semibold text-gray-800 flex-1">{root.name}</span>
+                    <button onClick={() => deleteDepartment(root.id)} title="삭제" className="text-red-400 hover:text-red-600">
+                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    </button>
+                  </div>
+                  {kids.map((child) => (
+                    <div key={child.id} className="flex items-center gap-2 py-1 px-2 ml-5 rounded-lg hover:bg-gray-100">
+                      <span className="text-gray-400 text-xs mr-0.5">└</span>
+                      <span className="text-sm text-gray-700 flex-1">{child.name}</span>
+                      <button onClick={() => deleteDepartment(child.id)} title="삭제" className="text-red-400 hover:text-red-600">
+                        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              );
+            })}
           </div>
-          <div className="flex gap-2">
+          <div className="flex gap-2 pt-2 border-t border-gray-200">
+            <select
+              value={newDeptParentId ?? ""}
+              onChange={(e) => setNewDeptParentId(e.target.value ? Number(e.target.value) : null)}
+              className="border border-gray-200 rounded-lg px-2 py-1.5 text-sm bg-white focus:ring-2 focus:ring-blue-400 outline-none"
+            >
+              <option value="">L1 (최상위)</option>
+              {departments.filter((d) => !d.parentId).map((d) => (
+                <option key={d.id} value={d.id}>{d.name}</option>
+              ))}
+            </select>
             <input
               type="text"
               value={newDeptName}
               onChange={(e) => setNewDeptName(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && addDepartment()}
-              placeholder="새 부서명 입력"
+              placeholder="부서명 입력"
               className="border border-gray-200 rounded-lg px-3 py-1.5 text-sm flex-1 focus:ring-2 focus:ring-blue-400 outline-none"
             />
             <button onClick={addDepartment} className="bg-gray-700 text-white text-sm px-4 py-1.5 rounded-lg hover:bg-gray-800">추가</button>
@@ -276,10 +339,7 @@ export default function ContactTable({ initial, initialDepartments }: { initial:
                 <td className="px-4 py-2"><input className={inputCls} value={addForm.email} onChange={(e) => setAddForm((f) => ({ ...f, email: e.target.value }))} placeholder="example@gov.kr" /></td>
                 <td className="px-4 py-2"><input className={inputCls} value={addForm.phone} onChange={(e) => setAddForm((f) => ({ ...f, phone: e.target.value }))} placeholder="02-1234-5678" /></td>
                 <td className="px-4 py-2">
-                  <select className={selectCls} value={addForm.department} onChange={(e) => setAddForm((f) => ({ ...f, department: e.target.value }))}>
-                    <option value="">부서 선택</option>
-                    {departments.map((d) => <option key={d.id} value={d.name}>{d.name}</option>)}
-                  </select>
+                  <DeptSelect value={addForm.department} onChange={(v) => setAddForm((f) => ({ ...f, department: v }))} departments={departments} className={selectCls} />
                 </td>
                 <td className="px-4 py-2 text-center">
                   <div className="flex items-center justify-center gap-1">
@@ -310,10 +370,7 @@ export default function ContactTable({ initial, initialDepartments }: { initial:
                     <td className="px-4 py-2"><input className={inputCls} value={editForm.email} onChange={(e) => setEditForm((f) => ({ ...f, email: e.target.value }))} /></td>
                     <td className="px-4 py-2"><input className={inputCls} value={editForm.phone} onChange={(e) => setEditForm((f) => ({ ...f, phone: e.target.value }))} /></td>
                     <td className="px-4 py-2">
-                      <select className={selectCls} value={editForm.department} onChange={(e) => setEditForm((f) => ({ ...f, department: e.target.value }))}>
-                        <option value="">부서 선택</option>
-                        {departments.map((d) => <option key={d.id} value={d.name}>{d.name}</option>)}
-                      </select>
+                      <DeptSelect value={editForm.department} onChange={(v) => setEditForm((f) => ({ ...f, department: v }))} departments={departments} className={selectCls} />
                     </td>
                     <td className="px-4 py-2 text-center">
                       <div className="flex items-center justify-center gap-1">
@@ -329,7 +386,7 @@ export default function ContactTable({ initial, initialDepartments }: { initial:
                     <td className="px-4 py-3 text-gray-700">{c.personName}</td>
                     <td className="px-4 py-3 text-blue-600">{c.email}</td>
                     <td className="px-4 py-3 text-gray-600">{c.phone}</td>
-                    <td className="px-4 py-3 text-gray-500">{c.department ?? "-"}</td>
+                    <td className="px-4 py-3 text-gray-500">{getDeptDisplay(c.department)}</td>
                     <td className="px-4 py-3 text-center">
                       <div className="flex items-center justify-center gap-1">
                         <button onClick={() => startEdit(c)} className="text-xs text-blue-600 hover:text-blue-800 px-2 py-1 rounded hover:bg-blue-50">수정</button>
