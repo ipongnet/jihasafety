@@ -1,34 +1,61 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useEffect } from "react";
 
 export default function AdminLoginPage() {
-  const router = useRouter();
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const reason = new URLSearchParams(window.location.search).get("reason");
+    if (reason === "nosession") {
+      setError(
+        "대시보드에 들어가려면 세션 쿠키가 필요합니다. 비밀번호를 다시 입력하거나, 브라우저가 쿠키를 막고 있지 않은지 확인하세요."
+      );
+      window.history.replaceState({}, "", "/admin");
+    }
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
     setLoading(true);
+    let redirecting = false;
     try {
       const res = await fetch("/api/auth", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        credentials: "include",
         body: JSON.stringify({ password }),
       });
-      const data = await res.json();
-      if (data.success) {
-        router.push("/admin/dashboard");
-      } else {
-        setError(data.message || "로그인에 실패했습니다.");
+
+      const raw = await res.text();
+      let data: { success?: boolean; message?: string } = {};
+      try {
+        data = raw ? (JSON.parse(raw) as typeof data) : {};
+      } catch {
+        setError(`서버 응답을 해석할 수 없습니다. (HTTP ${res.status})`);
+        return;
       }
+
+      if (data.success) {
+        redirecting = true;
+        window.location.assign("/admin/dashboard");
+        return;
+      }
+
+      const msg =
+        data.message ||
+        (res.status === 401
+          ? "비밀번호가 올바르지 않습니다."
+          : `로그인에 실패했습니다. (HTTP ${res.status})`);
+      setError(msg);
     } catch {
-      setError("서버 오류가 발생했습니다.");
+      setError("네트워크 오류이거나 서버에 연결할 수 없습니다.");
     } finally {
-      setLoading(false);
+      if (!redirecting) setLoading(false);
     }
   };
 
@@ -56,7 +83,14 @@ export default function AdminLoginPage() {
               autoFocus
             />
           </div>
-          {error && <p className="text-red-500 text-xs">{error}</p>}
+          {error && (
+            <p
+              role="alert"
+              className="text-sm text-red-800 bg-red-50 border border-red-200 rounded-lg px-3 py-2"
+            >
+              {error}
+            </p>
+          )}
           <button
             type="submit"
             disabled={loading}

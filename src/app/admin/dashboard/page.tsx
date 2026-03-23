@@ -12,7 +12,7 @@ interface Props {
 
 export default async function DashboardPage({ searchParams }: Props) {
   const ok = await getSession();
-  if (!ok) redirect("/admin");
+  if (!ok) redirect("/admin?reason=nosession");
 
   const { tab } = await searchParams;
   const activeTab = tab === "submissions" ? "submissions" : "contacts";
