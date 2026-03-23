@@ -49,7 +49,10 @@ export async function GET(request: NextRequest) {
   for (const type of ["road", "parcel"] as const) {
     try {
       const url = buildUrl(type);
-      const res = await fetch(url, { next: { revalidate: 0 } });
+      const res = await fetch(url, {
+        next: { revalidate: 0 },
+        headers: { "Referer": "https://jihasafety.vercel.app/" },
+      });
       const text = await res.text();
       let data;
       try { data = JSON.parse(text); } catch { errors.push(`${type}: invalid JSON: ${text.slice(0, 200)}`); continue; }
