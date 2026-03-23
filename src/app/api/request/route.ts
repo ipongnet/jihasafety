@@ -89,15 +89,18 @@ export async function POST(request: NextRequest) {
 
     // CSV 생성
     const normalizedSido = normalizeSido(sido);
+    const replyEmail = process.env.GMAIL_USER ?? "";
     const csvContent = generateAddressCSV({
       fullAddress,
       sido: normalizedSido,
       sigungu,
       latitude,
       longitude,
+      companyName,
+      replyEmail,
     });
     attachments.unshift({
-      filename: generateCSVFilename(),
+      filename: generateCSVFilename(sigungu, companyName),
       content: Buffer.from(csvContent, "utf-8"),
       contentType: "text/csv",
     });
