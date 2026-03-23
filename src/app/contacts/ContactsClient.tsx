@@ -80,7 +80,7 @@ export default function ContactsClient({ contacts, departments }: { contacts: Co
         oncomplete: (data) => {
           const sigungu = data.sigungu || "";
           const sido = data.sido || "";
-          setSearchAddress(data.roadAddress || `${sido} ${sigungu}`);
+          setSearchAddress(data.address || `${sido} ${sigungu}`);
           const match = findContactInList(contacts, sido, sigungu);
           setSearchResult(match ?? "none");
         },
