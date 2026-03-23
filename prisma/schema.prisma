@@ -39,4 +39,7 @@ model Submission {
   cityContactId         Int?
   cityContact           CityContact? @relation(fields: [cityContactId], references: [id])
   createdAt             DateTime     @default(now())
+
+  @@index([status, createdAt])
+  @@index([sido, sigungu])
 }

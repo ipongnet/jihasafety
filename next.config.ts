@@ -24,7 +24,7 @@ const nextConfig: NextConfig = {
               "font-src 'self' https://fonts.gstatic.com https://*.daumcdn.net",
               "img-src 'self' data: blob: https://*.daumcdn.net https://*.kakao.com https://*.kakaocdn.net",
               "connect-src 'self' https://*.daumcdn.net https://dapi.kakao.com https://*.kakao.com",
-              "frame-src https://*.daumcdn.net https://*.kakao.com",
+              "frame-src https://postcode.map.daum.net https://map.kakao.com",
             ].join("; "),
           },
         ],

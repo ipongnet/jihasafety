@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { verifyPassword, createSession, setSessionCookie, clearSession } from "@/lib/auth";
+import { verifyPassword, createSession, setSessionCookie, clearSession, getSession } from "@/lib/auth";
 
 export async function POST(request: NextRequest) {
   try {
@@ -14,13 +14,15 @@ export async function POST(request: NextRequest) {
     const token = createSession();
     await setSessionCookie(token);
     return NextResponse.json({ success: true });
-  } catch (err) {
-    console.error("[auth] 로그인 에러:", err);
+  } catch {
     return NextResponse.json({ success: false, message: "서버 오류가 발생했습니다." }, { status: 500 });
   }
 }
 
 export async function DELETE() {
+  if (!(await getSession())) {
+    return NextResponse.json({ success: false, message: "Unauthorized" }, { status: 401 });
+  }
   await clearSession();
   return NextResponse.json({ success: true });
 }

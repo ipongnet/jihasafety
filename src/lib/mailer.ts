@@ -1,13 +1,5 @@
 import nodemailer from "nodemailer";
 
-const transporter = nodemailer.createTransport({
-  service: "gmail",
-  auth: {
-    user: process.env.GMAIL_USER,
-    pass: process.env.GMAIL_APP_PASSWORD,
-  },
-});
-
 interface Attachment {
   filename: string;
   content: Buffer;
@@ -22,8 +14,17 @@ interface SendMailOptions {
 }
 
 export async function sendMail({ to, subject, html, attachments }: SendMailOptions) {
+  const gmailUser = process.env.GMAIL_USER;
+  const gmailPass = process.env.GMAIL_APP_PASSWORD;
+  if (!gmailUser || !gmailPass) {
+    throw new Error("GMAIL_USER 또는 GMAIL_APP_PASSWORD 환경변수가 설정되지 않았습니다.");
+  }
+  const transporter = nodemailer.createTransport({
+    service: "gmail",
+    auth: { user: gmailUser, pass: gmailPass },
+  });
   return transporter.sendMail({
-    from: `"지하안전 플랫폼" <${process.env.GMAIL_USER}>`,
+    from: `"지하안전 플랫폼" <${gmailUser}>`,
     to,
     subject,
     html,
