@@ -1,6 +1,14 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, type ReactNode } from "react";
+import { getDepartmentDisplayLabel } from "@/lib/department-display";
+import { formatSubmissionDateTimeLong, formatSubmissionDateTimeShort } from "@/lib/date-format";
+
+interface DepartmentRow {
+  id: number;
+  name: string;
+  parentId: number | null;
+}
 
 interface Submission {
   id: number;
@@ -13,9 +21,17 @@ interface Submission {
   fullAddress: string;
   sido: string;
   sigungu: string;
+  latitude: number | null;
+  longitude: number | null;
+  emailSentTo: string | null;
   status: string;
   createdAt: string;
-  cityContact: { personName: string } | null;
+  cityContact: {
+    personName: string;
+    department: string | null;
+    email: string;
+    phone: string;
+  } | null;
 }
 
 const STATUS_LABEL: Record<string, { label: string; cls: string }> = {
@@ -24,20 +40,42 @@ const STATUS_LABEL: Record<string, { label: string; cls: string }> = {
   no_contact: { label: "담당자 없음", cls: "bg-gray-100 text-gray-600" },
 };
 
-export default function SubmissionTable({ initial }: { initial: Submission[] }) {
+export default function SubmissionTable({
+  initial,
+  departments,
+}: {
+  initial: Submission[];
+  departments: DepartmentRow[];
+}) {
   const [filter, setFilter] = useState<"all" | "sent" | "failed" | "no_contact">("all");
   const [search, setSearch] = useState("");
+  const [detail, setDetail] = useState<Submission | null>(null);
+
+  useEffect(() => {
+    if (!detail) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setDetail(null);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [detail]);
+
+  const deptLabel = (s: Submission) =>
+    getDepartmentDisplayLabel(s.cityContact?.department ?? null, departments);
 
   const filtered = initial.filter((s) => {
     if (filter !== "all" && s.status !== filter) return false;
     if (search) {
       const q = search.toLowerCase();
       const assignee = s.cityContact?.personName?.toLowerCase() ?? "";
+      const dLabel = deptLabel(s).toLowerCase();
       return (
         s.projectName.toLowerCase().includes(q) ||
-        s.companyName.toLowerCase().includes(q) ||
         s.fullAddress.toLowerCase().includes(q) ||
         assignee.includes(q) ||
+        dLabel.includes(q) ||
+        s.sido.toLowerCase().includes(q) ||
+        s.sigungu.toLowerCase().includes(q) ||
         (s.submissionNumber?.toLowerCase().includes(q) ?? false)
       );
     }
@@ -53,12 +91,12 @@ export default function SubmissionTable({ initial }: { initial: Submission[] }) 
 
   return (
     <div className="space-y-4">
-      {/* 필터 탭 */}
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <div className="flex gap-1">
           {(["all", "sent", "failed", "no_contact"] as const).map((f) => (
             <button
               key={f}
+              type="button"
               onClick={() => setFilter(f)}
               className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
                 filter === f
@@ -73,91 +111,97 @@ export default function SubmissionTable({ initial }: { initial: Submission[] }) 
         </div>
         <input
           type="text"
-          placeholder="공사명, 업체명, 주소 검색"
+          placeholder="접수번호, 공사명, 주소, 담당자·부서 검색"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="border border-gray-200 rounded-lg px-4 py-2 text-sm w-64 focus:ring-2 focus:ring-blue-400 outline-none"
+          className="border border-gray-200 rounded-lg px-4 py-2 text-sm w-full max-w-xs sm:max-w-md focus:ring-2 focus:ring-blue-400 outline-none"
         />
       </div>
 
-      {/* 테이블 — table-fixed + truncate 로 가로 폭 내 수렴 */}
       <div className="rounded-xl border border-gray-200 overflow-hidden">
         <table className="w-full table-fixed text-xs sm:text-sm border-collapse">
           <colgroup>
-            <col className="w-[11%]" />
-            <col className="w-[8%]" />
-            <col className="w-[10%]" />
-            <col className="w-[13%]" />
-            <col className="w-[10%]" />
-            <col className="w-[12%]" />
             <col className="w-[14%]" />
             <col className="w-[12%]" />
+            <col className="w-[14%]" />
             <col className="w-[10%]" />
+            <col className="w-[16%]" />
+            <col className="w-[22%]" />
+            <col className="w-[12%]" />
           </colgroup>
           <thead className="bg-gray-50 text-gray-600 text-[10px] sm:text-xs uppercase tracking-wide">
             <tr>
-              <th className="px-1.5 sm:px-2 py-2 text-left font-semibold">접수번호</th>
-              <th className="px-1.5 sm:px-2 py-2 text-left font-semibold">배정담당자</th>
-              <th className="px-1.5 sm:px-2 py-2 text-left font-semibold">접수일시</th>
-              <th className="px-1.5 sm:px-2 py-2 text-left font-semibold">공사명</th>
-              <th className="px-1.5 sm:px-2 py-2 text-left font-semibold">시공업체</th>
-              <th className="px-1.5 sm:px-2 py-2 text-left font-semibold">신청자 이메일</th>
-              <th className="px-1.5 sm:px-2 py-2 text-left font-semibold">공사위치</th>
-              <th className="px-1.5 sm:px-2 py-2 text-left font-semibold">공사기간</th>
+              <th className="px-1.5 sm:px-2 py-2 text-center font-semibold">접수번호</th>
+              <th className="px-1.5 sm:px-2 py-2 text-center font-semibold">접수일시</th>
+              <th className="px-1.5 sm:px-2 py-2 text-center font-semibold">담당부서</th>
+              <th className="px-1.5 sm:px-2 py-2 text-center font-semibold">담당자 이름</th>
+              <th className="px-1.5 sm:px-2 py-2 text-center font-semibold">공사명</th>
+              <th className="px-1.5 sm:px-2 py-2 text-center font-semibold">공사위치</th>
               <th className="px-1.5 sm:px-2 py-2 text-center font-semibold">상태</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-100">
             {filtered.length === 0 ? (
               <tr>
-                <td colSpan={9} className="px-4 py-8 text-center text-gray-400">
+                <td colSpan={7} className="px-4 py-8 text-center text-gray-400">
                   접수 이력이 없습니다.
                 </td>
               </tr>
             ) : (
               filtered.map((s) => {
                 const st = STATUS_LABEL[s.status] ?? { label: s.status, cls: "bg-gray-100 text-gray-600" };
-                const createdAt = new Date(s.createdAt).toLocaleString("ko-KR", {
-                  month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit",
-                });
-                const startDate = new Date(s.constructionStartDate).toLocaleDateString("ko-KR", {
-                  month: "2-digit", day: "2-digit",
-                });
-                const endDate = new Date(s.constructionEndDate).toLocaleDateString("ko-KR", {
-                  month: "2-digit", day: "2-digit",
-                });
-                const cell = "px-1.5 sm:px-2 py-2 align-top min-w-0";
+                const createdAt = formatSubmissionDateTimeShort(s.createdAt);
+                const cell =
+                  "px-1.5 sm:px-2 py-2 align-middle min-w-0 text-center";
+                const dpt = deptLabel(s);
                 return (
                   <tr key={s.id} className="hover:bg-gray-50">
-                    <td className={`${cell} font-mono text-[10px] sm:text-xs text-gray-600 whitespace-nowrap overflow-hidden text-ellipsis`}>
-                      {s.submissionNumber ?? "-"}
+                    <td className={cell}>
+                      <button
+                        type="button"
+                        onClick={() => setDetail(s)}
+                        className="w-full text-center font-mono text-[10px] sm:text-xs text-blue-600 hover:text-blue-800 hover:underline truncate block"
+                        title="상세 보기"
+                      >
+                        {s.submissionNumber ?? "-"}
+                      </button>
+                    </td>
+                    <td className={`${cell} text-gray-500 whitespace-nowrap tabular-nums`}>{createdAt}</td>
+                    <td className={`${cell} text-gray-700`} title={dpt !== "-" ? dpt : undefined}>
+                      <div className="flex justify-center min-w-0">
+                        <span className="truncate max-w-full">{dpt}</span>
+                      </div>
                     </td>
                     <td
-                      className={`${cell} truncate ${s.cityContact?.personName ? "text-gray-800" : "text-gray-400"}`}
+                      className={cell}
                       title={s.cityContact?.personName ?? undefined}
                     >
-                      {s.cityContact?.personName ?? "-"}
+                      <div className="flex justify-center min-w-0">
+                        <span
+                          className={`truncate max-w-full ${s.cityContact?.personName ? "text-gray-800" : "text-gray-400"}`}
+                        >
+                          {s.cityContact?.personName ?? "-"}
+                        </span>
+                      </div>
                     </td>
-                    <td className={`${cell} text-gray-500 whitespace-nowrap overflow-hidden text-ellipsis`}>{createdAt}</td>
-                    <td className={`${cell} font-medium text-gray-900 truncate`} title={s.projectName}>
-                      {s.projectName}
+                    <td className={cell} title={s.projectName}>
+                      <div className="flex justify-center min-w-0">
+                        <span className="truncate max-w-full font-medium text-gray-900">{s.projectName}</span>
+                      </div>
                     </td>
-                    <td className={`${cell} text-gray-700 truncate`} title={s.companyName}>
-                      {s.companyName}
+                    <td className={cell} title={s.fullAddress}>
+                      <div className="flex justify-center min-w-0">
+                        <span className="truncate max-w-full text-gray-600">{s.fullAddress}</span>
+                      </div>
                     </td>
-                    <td className={`${cell} text-gray-600 truncate`} title={s.submitterEmail ?? undefined}>
-                      {s.submitterEmail ?? "-"}
-                    </td>
-                    <td className={`${cell} text-gray-600 truncate`} title={s.fullAddress}>
-                      {s.fullAddress}
-                    </td>
-                    <td className={`${cell} text-gray-500 whitespace-nowrap overflow-hidden text-ellipsis`}>
-                      {startDate}~{endDate}
-                    </td>
-                    <td className={`${cell} text-center`}>
-                      <span className={`inline-flex max-w-full px-1 sm:px-1.5 py-0.5 rounded-full text-[10px] sm:text-xs font-medium truncate ${st.cls}`}>
-                        {st.label}
-                      </span>
+                    <td className={cell}>
+                      <div className="flex justify-center min-w-0">
+                        <span
+                          className={`inline-flex max-w-full px-1 sm:px-1.5 py-0.5 rounded-full text-[10px] sm:text-xs font-medium truncate ${st.cls}`}
+                        >
+                          {st.label}
+                        </span>
+                      </div>
                     </td>
                   </tr>
                 );
@@ -167,6 +211,82 @@ export default function SubmissionTable({ initial }: { initial: Submission[] }) 
         </table>
       </div>
       <p className="text-xs text-gray-400">총 {initial.length}건 접수</p>
+
+      {detail && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="submission-detail-title"
+          onClick={() => setDetail(null)}
+        >
+          <div
+            className="bg-white rounded-xl shadow-xl max-w-lg w-full max-h-[90vh] overflow-y-auto border border-gray-200"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="sticky top-0 flex items-center justify-between gap-3 px-5 py-4 border-b border-gray-100 bg-white">
+              <h2 id="submission-detail-title" className="text-lg font-semibold text-gray-900">
+                접수 상세
+              </h2>
+              <button
+                type="button"
+                onClick={() => setDetail(null)}
+                className="p-2 rounded-lg text-gray-500 hover:bg-gray-100 hover:text-gray-800"
+                aria-label="닫기"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            <div className="px-5 py-4 text-sm space-y-3">
+              {(() => {
+                const d = detail;
+                const st = STATUS_LABEL[d.status] ?? { label: d.status, cls: "bg-gray-100 text-gray-600" };
+                const createdFull = formatSubmissionDateTimeLong(d.createdAt);
+                const startDate = new Date(d.constructionStartDate).toLocaleDateString("ko-KR");
+                const endDate = new Date(d.constructionEndDate).toLocaleDateString("ko-KR");
+                const rows: [string, ReactNode][] = [
+                  ["접수번호", d.submissionNumber ?? "-"],
+                  ["접수일시", createdFull],
+                  [
+                    "상태",
+                    <span key="st" className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium ${st.cls}`}>
+                      {st.label}
+                    </span>,
+                  ],
+                  ["공사명", d.projectName],
+                  ["시공업체", d.companyName],
+                  ["신청자 이메일", d.submitterEmail ?? "-"],
+                  ["공사 예정 기간", `${startDate} ~ ${endDate}`],
+                  ["공사위치", d.fullAddress],
+                  ["시·도", d.sido],
+                  ["시·군·구", d.sigungu],
+                  [
+                    "좌표",
+                    d.latitude != null && d.longitude != null ? `${d.latitude}, ${d.longitude}` : "-",
+                  ],
+                  ["담당부서", deptLabel(d)],
+                  ["담당자 이름", d.cityContact?.personName ?? "-"],
+                  ["담당자 이메일", d.cityContact?.email ?? "-"],
+                  ["담당자 전화", d.cityContact?.phone ?? "-"],
+                  ["발송 대상", d.emailSentTo ?? "-"],
+                ];
+                return (
+                  <dl className="grid grid-cols-[7rem_1fr] gap-x-3 gap-y-2.5">
+                    {rows.map(([label, value]) => (
+                      <div key={label} className="contents">
+                        <dt className="text-gray-500 text-xs sm:text-sm pt-0.5">{label}</dt>
+                        <dd className="text-gray-900 text-xs sm:text-sm break-words">{value}</dd>
+                      </div>
+                    ))}
+                  </dl>
+                );
+              })()}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

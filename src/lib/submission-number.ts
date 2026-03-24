@@ -1,9 +1,8 @@
 import { prisma } from "./db";
-
-const DEPT_SUFFIXES = /지역본부|본부|지부|센터|지사|관리처|사업소|지점/g;
+import { shortenDeptDisplayName } from "@/lib/dept-name-shorten";
 
 function extractDeptCode(name: string): string {
-  return name.replace(DEPT_SUFFIXES, "").trim();
+  return shortenDeptDisplayName(name);
 }
 
 export async function generateSubmissionNumber(
