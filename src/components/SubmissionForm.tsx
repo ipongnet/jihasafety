@@ -2,7 +2,7 @@
 
 import { useState, useCallback, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import L from "leaflet";
+import type { Map as LeafletMap } from "leaflet";
 import "leaflet/dist/leaflet.css";
 import KakaoAddressSearch from "./KakaoAddressSearch";
 import type { AddressData, FormErrors } from "@/types";
@@ -30,7 +30,7 @@ export default function SubmissionForm() {
   const [errors, setErrors] = useState<FormErrors>({});
 
   const mapContainerRef = useRef<HTMLDivElement>(null);
-  const vwMapRef = useRef<L.Map | null>(null);
+  const vwMapRef = useRef<LeafletMap | null>(null);
 
   const handleAddressComplete = useCallback(
     (data: { fullAddress: string; sido: string; sigungu: string; zonecode: string }) => {
@@ -61,40 +61,47 @@ export default function SubmissionForm() {
     if (!mapCoords || !mapContainerRef.current) return;
     const { lat, lng } = mapCoords;
     const apiKey = process.env.NEXT_PUBLIC_VWORLD_API_KEY;
+    const container = mapContainerRef.current;
 
-    // 기존 맵 정리
-    if (vwMapRef.current) {
-      vwMapRef.current.remove();
-      vwMapRef.current = null;
-    }
+    const initMap = async () => {
+      const L = (await import("leaflet")).default;
 
-    try {
-      const map = L.map(mapContainerRef.current).setView([lat, lng], 15);
+      // 기존 맵 정리
+      if (vwMapRef.current) {
+        vwMapRef.current.remove();
+        vwMapRef.current = null;
+      }
 
-      L.tileLayer(
-        apiKey
-          ? `https://api.vworld.kr/req/wmts/1.0.0/${apiKey}/Base/{z}/{y}/{x}.png`
-          : "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
-        {
-          attribution: apiKey ? "© VWorld" : "© OpenStreetMap",
-          maxZoom: 19,
-        }
-      ).addTo(map);
+      try {
+        const map = L.map(container).setView([lat, lng], 15);
 
-      // 마커 아이콘 (Leaflet 번들링 이슈 우회)
-      const icon = L.icon({
-        iconUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png",
-        iconRetinaUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png",
-        shadowUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
-        iconSize: [25, 41],
-        iconAnchor: [12, 41],
-      });
+        L.tileLayer(
+          apiKey
+            ? `https://api.vworld.kr/req/wmts/1.0.0/${apiKey}/Base/{z}/{y}/{x}.png`
+            : "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+          {
+            attribution: apiKey ? "© VWorld" : "© OpenStreetMap",
+            maxZoom: 19,
+          }
+        ).addTo(map);
 
-      L.marker([lat, lng], { icon }).addTo(map);
-      vwMapRef.current = map;
-    } catch {
-      setMapError("지도를 불러오는데 실패했습니다. 지도 없이 접수할 수 있습니다.");
-    }
+        // 마커 아이콘 (Leaflet 번들링 이슈 우회)
+        const icon = L.icon({
+          iconUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png",
+          iconRetinaUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png",
+          shadowUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
+          iconSize: [25, 41],
+          iconAnchor: [12, 41],
+        });
+
+        L.marker([lat, lng], { icon }).addTo(map);
+        vwMapRef.current = map;
+      } catch {
+        setMapError("지도를 불러오는데 실패했습니다. 지도 없이 접수할 수 있습니다.");
+      }
+    };
+
+    initMap();
 
     return () => {
       if (vwMapRef.current) {
