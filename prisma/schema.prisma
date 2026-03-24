@@ -46,6 +46,9 @@ model Submission {
   status                String
   consentGiven          Boolean      @default(true)
   submissionNumber      String?      @unique
+  conflictStatus        String?
+  responseMessage       String?
+  respondedAt           DateTime?
   cityContactId         Int?
   cityContact           CityContact? @relation(fields: [cityContactId], references: [id])
   createdAt             DateTime     @default(now())

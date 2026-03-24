@@ -25,6 +25,9 @@ interface Submission {
   longitude: number | null;
   emailSentTo: string | null;
   status: string;
+  conflictStatus: string | null;
+  responseMessage: string | null;
+  respondedAt: string | null;
   createdAt: string;
   cityContact: {
     personName: string;
@@ -38,6 +41,7 @@ const STATUS_LABEL: Record<string, { label: string; cls: string }> = {
   sent: { label: "발송 완료", cls: "bg-green-100 text-green-700" },
   failed: { label: "발송 실패", cls: "bg-red-100 text-red-700" },
   no_contact: { label: "담당자 없음", cls: "bg-gray-100 text-gray-600" },
+  replied: { label: "회신완료", cls: "bg-blue-100 text-blue-700" },
 };
 
 export default function SubmissionTable({
@@ -47,7 +51,7 @@ export default function SubmissionTable({
   initial: Submission[];
   departments: DepartmentRow[];
 }) {
-  const [filter, setFilter] = useState<"all" | "sent" | "failed" | "no_contact">("all");
+  const [filter, setFilter] = useState<"all" | "sent" | "failed" | "no_contact" | "replied">("all");
   const [search, setSearch] = useState("");
   const [detail, setDetail] = useState<Submission | null>(null);
 
@@ -87,13 +91,14 @@ export default function SubmissionTable({
     sent: initial.filter((s) => s.status === "sent").length,
     failed: initial.filter((s) => s.status === "failed").length,
     no_contact: initial.filter((s) => s.status === "no_contact").length,
+    replied: initial.filter((s) => s.status === "replied").length,
   };
 
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <div className="flex gap-1">
-          {(["all", "sent", "failed", "no_contact"] as const).map((f) => (
+          {(["all", "sent", "failed", "no_contact", "replied"] as const).map((f) => (
             <button
               key={f}
               type="button"
@@ -121,13 +126,14 @@ export default function SubmissionTable({
       <div className="rounded-xl border border-gray-200 overflow-hidden">
         <table className="w-full table-fixed text-xs sm:text-sm border-collapse">
           <colgroup>
-            <col className="w-[14%]" />
-            <col className="w-[12%]" />
-            <col className="w-[14%]" />
+            <col className="w-[13%]" />
+            <col className="w-[11%]" />
+            <col className="w-[13%]" />
+            <col className="w-[9%]" />
+            <col className="w-[15%]" />
+            <col className="w-[20%]" />
             <col className="w-[10%]" />
-            <col className="w-[16%]" />
-            <col className="w-[22%]" />
-            <col className="w-[12%]" />
+            <col className="w-[9%]" />
           </colgroup>
           <thead className="bg-gray-50 text-gray-600 text-[10px] sm:text-xs uppercase tracking-wide">
             <tr>
@@ -138,12 +144,13 @@ export default function SubmissionTable({
               <th className="px-1.5 sm:px-2 py-2 text-center font-semibold">공사명</th>
               <th className="px-1.5 sm:px-2 py-2 text-center font-semibold">공사위치</th>
               <th className="px-1.5 sm:px-2 py-2 text-center font-semibold">상태</th>
+              <th className="px-1.5 sm:px-2 py-2 text-center font-semibold">저촉유무</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-100">
             {filtered.length === 0 ? (
               <tr>
-                <td colSpan={7} className="px-4 py-8 text-center text-gray-400">
+                <td colSpan={8} className="px-4 py-8 text-center text-gray-400">
                   접수 이력이 없습니다.
                 </td>
               </tr>
@@ -202,6 +209,21 @@ export default function SubmissionTable({
                           {st.label}
                         </span>
                       </div>
+                    </td>
+                    <td className={cell}>
+                      {s.conflictStatus ? (
+                        <span
+                          className={`inline-flex px-1 sm:px-1.5 py-0.5 rounded-full text-[10px] sm:text-xs font-medium ${
+                            s.conflictStatus === "저촉"
+                              ? "bg-red-100 text-red-700"
+                              : "bg-green-100 text-green-700"
+                          }`}
+                        >
+                          {s.conflictStatus}
+                        </span>
+                      ) : (
+                        <span className="text-gray-300">-</span>
+                      )}
                     </td>
                   </tr>
                 );
@@ -271,6 +293,15 @@ export default function SubmissionTable({
                   ["담당자 이메일", d.cityContact?.email ?? "-"],
                   ["담당자 전화", d.cityContact?.phone ?? "-"],
                   ["발송 대상", d.emailSentTo ?? "-"],
+                  ...(d.status === "replied" ? [
+                    ["저촉유무", d.conflictStatus ? (
+                      <span key="cs" className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium ${
+                        d.conflictStatus === "저촉" ? "bg-red-100 text-red-700" : "bg-green-100 text-green-700"
+                      }`}>{d.conflictStatus}</span>
+                    ) : "-"] as [string, ReactNode],
+                    ["회신 멘트", d.responseMessage ?? "-"] as [string, ReactNode],
+                    ["회신일시", d.respondedAt ? new Date(d.respondedAt).toLocaleString("ko-KR") : "-"] as [string, ReactNode],
+                  ] : []),
                 ];
                 return (
                   <dl className="grid grid-cols-[7rem_1fr] gap-x-3 gap-y-2.5">

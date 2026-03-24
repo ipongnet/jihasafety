@@ -79,6 +79,12 @@ export default async function DashboardPage({ searchParams }: Props) {
       unit: "건",
       color: "text-amber-600",
     },
+    {
+      label: "회신완료",
+      value: submissions.filter((s) => s.status === "replied").length,
+      unit: "건",
+      color: "text-blue-600",
+    },
   ];
 
   const withDeptCount = contacts.filter((c) => c.department?.trim()).length;
@@ -164,6 +170,7 @@ export default async function DashboardPage({ searchParams }: Props) {
                 constructionStartDate: s.constructionStartDate.toISOString(),
                 constructionEndDate: s.constructionEndDate.toISOString(),
                 createdAt: s.createdAt.toISOString(),
+                respondedAt: s.respondedAt?.toISOString() ?? null,
               }))}
             />
           )}
