@@ -6,6 +6,7 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 
 interface SubmissionResult {
+  submissionNumber: string | null;
   emailSentTo: string | null;
   contact: {
     department: string | null;
@@ -41,6 +42,12 @@ export default function CompletePage() {
 
           {result && (
             <div className="bg-white rounded-xl border border-gray-200 p-5 mb-8 text-left space-y-3">
+              {result.submissionNumber && (
+                <div className="flex items-start gap-3">
+                  <span className="text-xs font-medium text-gray-400 w-20 shrink-0 pt-0.5">접수번호</span>
+                  <span className="text-sm font-mono text-gray-800">{result.submissionNumber}</span>
+                </div>
+              )}
               {result.contact ? (
                 <>
                   {result.contact.department && (

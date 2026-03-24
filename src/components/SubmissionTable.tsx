@@ -4,6 +4,7 @@ import { useState } from "react";
 
 interface Submission {
   id: number;
+  submissionNumber: string | null;
   projectName: string;
   companyName: string;
   submitterEmail: string | null;
@@ -82,6 +83,7 @@ export default function SubmissionTable({ initial }: { initial: Submission[] }) 
         <table className="w-full text-sm">
           <thead className="bg-gray-50 text-gray-600 text-xs uppercase tracking-wide">
             <tr>
+              <th className="px-4 py-3 text-left">접수번호</th>
               <th className="px-4 py-3 text-left">접수일시</th>
               <th className="px-4 py-3 text-left">공사명</th>
               <th className="px-4 py-3 text-left">시공업체</th>
@@ -95,7 +97,7 @@ export default function SubmissionTable({ initial }: { initial: Submission[] }) 
           <tbody className="divide-y divide-gray-100">
             {filtered.length === 0 ? (
               <tr>
-                <td colSpan={8} className="px-4 py-8 text-center text-gray-400">
+                <td colSpan={9} className="px-4 py-8 text-center text-gray-400">
                   접수 이력이 없습니다.
                 </td>
               </tr>
@@ -113,6 +115,7 @@ export default function SubmissionTable({ initial }: { initial: Submission[] }) 
                 });
                 return (
                   <tr key={s.id} className="hover:bg-gray-50">
+                    <td className="px-4 py-3 font-mono text-xs text-gray-600 whitespace-nowrap">{s.submissionNumber ?? "-"}</td>
                     <td className="px-4 py-3 text-gray-500 whitespace-nowrap">{createdAt}</td>
                     <td className="px-4 py-3 font-medium text-gray-900 max-w-[160px] truncate">{s.projectName}</td>
                     <td className="px-4 py-3 text-gray-700 whitespace-nowrap">{s.companyName}</td>

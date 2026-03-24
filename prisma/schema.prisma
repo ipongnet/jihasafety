@@ -45,6 +45,7 @@ model Submission {
   emailSentTo           String?
   status                String
   consentGiven          Boolean      @default(true)
+  submissionNumber      String?      @unique
   cityContactId         Int?
   cityContact           CityContact? @relation(fields: [cityContactId], references: [id])
   createdAt             DateTime     @default(now())

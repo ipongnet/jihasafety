@@ -4,6 +4,7 @@ import { findContact, normalizeSido } from "@/lib/city-matcher";
 import { generateAddressCSV, generateCSVFilename } from "@/lib/csv-generator";
 import { buildEmailSubject, buildEmailHTML } from "@/lib/email-template";
 import { sendMail } from "@/lib/mailer";
+import { generateSubmissionNumber } from "@/lib/submission-number";
 
 export const maxDuration = 60;
 
@@ -144,6 +145,8 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    const submissionNumber = await generateSubmissionNumber(contact?.department);
+
     let submissionId: number | undefined;
     try {
       const submission = await prisma.submission.create({
@@ -161,6 +164,7 @@ export async function POST(request: NextRequest) {
           emailSentTo,
           status,
           consentGiven,
+          submissionNumber,
           cityContactId: contact?.id ?? null,
         },
       });
@@ -183,6 +187,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       success: true,
       submissionId,
+      submissionNumber,
       emailSentTo,
       contact: contact ? {
         department: departmentDisplay,

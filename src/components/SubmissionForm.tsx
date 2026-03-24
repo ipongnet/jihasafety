@@ -201,6 +201,7 @@ export default function SubmissionForm() {
       if (res.ok) {
         const data = await res.json().catch(() => ({}));
         sessionStorage.setItem("submissionResult", JSON.stringify({
+          submissionNumber: data.submissionNumber ?? null,
           emailSentTo: data.emailSentTo ?? null,
           contact: data.contact ?? null,
         }));
