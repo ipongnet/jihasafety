@@ -72,11 +72,6 @@ export default function SubmissionForm() {
   useEffect(() => {
     if (!mapCoords || !mapContainerRef.current) return;
     const { lat, lng } = mapCoords;
-    const apiKey = process.env.NEXT_PUBLIC_VWORLD_API_KEY;
-    if (!apiKey) {
-      console.warn("[VWorld] NEXT_PUBLIC_VWORLD_API_KEY가 설정되지 않았습니다.");
-      return;
-    }
 
     const initMap = () => {
       if (!mapContainerRef.current || !window.vw) return;
@@ -102,38 +97,25 @@ export default function SubmissionForm() {
       }
     };
 
-    let pollInterval: ReturnType<typeof setInterval> | null = null;
-
-    const waitForVw = (callback: () => void, timeout = 10000) => {
-      if (window.vw) { callback(); return; }
-      const start = Date.now();
-      pollInterval = setInterval(() => {
-        if (window.vw) {
-          clearInterval(pollInterval!);
-          pollInterval = null;
-          callback();
-        } else if (Date.now() - start > timeout) {
-          clearInterval(pollInterval!);
-          pollInterval = null;
-          setMapError("V-World 지도 로딩 시간 초과. 지도 없이 접수할 수 있습니다.");
-        }
-      }, 200);
-    };
-
-    const existing = document.getElementById("vworld-map-script");
-    if (existing) {
-      waitForVw(initMap);
+    // SDK는 layout.tsx에서 beforeInteractive로 이미 로드됨
+    // 단, 타이밍에 따라 아직 준비 안 됐을 수 있으므로 폴링
+    if (window.vw) {
+      initMap();
       return;
     }
 
-    const script = document.createElement("script");
-    script.id = "vworld-map-script";
-    script.src = `https://map.vworld.kr/js/vworldMapInit.js.do?version=2.0&apiKey=${apiKey}`;
-    script.onload = () => waitForVw(initMap);
-    script.onerror = () => setMapError("V-World 지도 스크립트 로드에 실패했습니다. 지도 없이 접수할 수 있습니다.");
-    document.head.appendChild(script);
+    const start = Date.now();
+    const interval = setInterval(() => {
+      if (window.vw) {
+        clearInterval(interval);
+        initMap();
+      } else if (Date.now() - start > 10000) {
+        clearInterval(interval);
+        setMapError("V-World 지도 로딩 시간 초과. 지도 없이 접수할 수 있습니다.");
+      }
+    }, 200);
 
-    return () => { if (pollInterval) clearInterval(pollInterval); };
+    return () => clearInterval(interval);
   }, [mapCoords]);
 
   const validateFile = (file: File): string | null => {

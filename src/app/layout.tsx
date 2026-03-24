@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Noto_Sans_KR } from "next/font/google";
+import Script from "next/script";
 import "./globals.css";
 
 const notoSansKR = Noto_Sans_KR({
@@ -19,6 +20,12 @@ export default function RootLayout({
 }) {
   return (
     <html lang="ko">
+      <head>
+        <Script
+          src={`https://map.vworld.kr/js/vworldMapInit.js.do?version=2.0&apiKey=${process.env.NEXT_PUBLIC_VWORLD_API_KEY}`}
+          strategy="beforeInteractive"
+        />
+      </head>
       <body className={notoSansKR.className}>{children}</body>
     </html>
   );
