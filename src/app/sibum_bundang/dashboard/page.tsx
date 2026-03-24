@@ -62,7 +62,7 @@ export default async function DashboardPage({ searchParams }: Props) {
   const submissionStats: DashboardStatItem[] = [
     { label: "총 접수", value: submissions.length, unit: "건", color: "text-gray-900" },
     {
-      label: "발송 완료",
+      label: "접수 완료",
       value: submissions.filter((s) => s.status === "sent").length,
       unit: "건",
       color: "text-green-600",

@@ -38,7 +38,7 @@ interface Submission {
 }
 
 const STATUS_LABEL: Record<string, { label: string; cls: string }> = {
-  sent: { label: "발송 완료", cls: "bg-green-100 text-green-700" },
+  sent: { label: "접수 완료", cls: "bg-green-100 text-green-700" },
   failed: { label: "발송 실패", cls: "bg-red-100 text-red-700" },
   no_contact: { label: "담당자 없음", cls: "bg-gray-100 text-gray-600" },
   replied: { label: "회신완료", cls: "bg-blue-100 text-blue-700" },
