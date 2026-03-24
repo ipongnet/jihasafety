@@ -77,33 +77,41 @@ export async function POST(
     responseMessage,
   };
 
-  await sendMail({
-    to: submission.submitterEmail,
-    subject: buildResponseEmailSubject(emailData),
-    html: buildResponseEmailHTML(emailData),
-    attachments: [
-      {
-        filename: pdfFile.name,
-        content: pdfBuffer,
-        contentType: "application/pdf",
+  try {
+    await sendMail({
+      to: submission.submitterEmail,
+      subject: buildResponseEmailSubject(emailData),
+      html: buildResponseEmailHTML(emailData),
+      attachments: [
+        {
+          filename: pdfFile.name,
+          content: pdfBuffer,
+          contentType: "application/pdf",
+        },
+      ],
+    });
+
+    // DB 업데이트
+    await prisma.submission.update({
+      where: { id: submissionId },
+      data: {
+        status: "replied",
+        conflictStatus,
+        responseMessage,
+        respondedAt: new Date(),
       },
-    ],
-  });
+    });
 
-  // DB 업데이트
-  await prisma.submission.update({
-    where: { id: submissionId },
-    data: {
-      status: "replied",
-      conflictStatus,
-      responseMessage,
-      respondedAt: new Date(),
-    },
-  });
-
-  return NextResponse.json({
-    success: true,
-    submissionNumber: emailData.submissionNumber,
-    emailSentTo: submission.submitterEmail,
-  });
+    return NextResponse.json({
+      success: true,
+      submissionNumber: emailData.submissionNumber,
+      emailSentTo: submission.submitterEmail,
+    });
+  } catch (err) {
+    console.error("[respond] 회신 처리 실패:", err);
+    return NextResponse.json(
+      { error: "회신 처리 중 오류가 발생했습니다", detail: err instanceof Error ? err.message : String(err) },
+      { status: 500 }
+    );
+  }
 }
