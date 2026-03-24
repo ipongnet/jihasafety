@@ -13,7 +13,6 @@ interface Submission {
   fullAddress: string;
   sido: string;
   sigungu: string;
-  emailSentTo: string | null;
   status: string;
   createdAt: string;
   cityContact: { personName: string } | null;
@@ -33,10 +32,13 @@ export default function SubmissionTable({ initial }: { initial: Submission[] }) 
     if (filter !== "all" && s.status !== filter) return false;
     if (search) {
       const q = search.toLowerCase();
+      const assignee = s.cityContact?.personName?.toLowerCase() ?? "";
       return (
         s.projectName.toLowerCase().includes(q) ||
         s.companyName.toLowerCase().includes(q) ||
-        s.fullAddress.toLowerCase().includes(q)
+        s.fullAddress.toLowerCase().includes(q) ||
+        assignee.includes(q) ||
+        (s.submissionNumber?.toLowerCase().includes(q) ?? false)
       );
     }
     return true;
@@ -78,20 +80,31 @@ export default function SubmissionTable({ initial }: { initial: Submission[] }) 
         />
       </div>
 
-      {/* 테이블 */}
-      <div className="overflow-x-auto rounded-xl border border-gray-200">
-        <table className="w-full text-sm">
-          <thead className="bg-gray-50 text-gray-600 text-xs uppercase tracking-wide">
+      {/* 테이블 — table-fixed + truncate 로 가로 폭 내 수렴 */}
+      <div className="rounded-xl border border-gray-200 overflow-hidden">
+        <table className="w-full table-fixed text-xs sm:text-sm border-collapse">
+          <colgroup>
+            <col className="w-[11%]" />
+            <col className="w-[8%]" />
+            <col className="w-[10%]" />
+            <col className="w-[13%]" />
+            <col className="w-[10%]" />
+            <col className="w-[12%]" />
+            <col className="w-[14%]" />
+            <col className="w-[12%]" />
+            <col className="w-[10%]" />
+          </colgroup>
+          <thead className="bg-gray-50 text-gray-600 text-[10px] sm:text-xs uppercase tracking-wide">
             <tr>
-              <th className="px-4 py-3 text-left">접수번호</th>
-              <th className="px-4 py-3 text-left">접수일시</th>
-              <th className="px-4 py-3 text-left">공사명</th>
-              <th className="px-4 py-3 text-left">시공업체</th>
-              <th className="px-4 py-3 text-left">신청자 이메일</th>
-              <th className="px-4 py-3 text-left">공사위치</th>
-              <th className="px-4 py-3 text-left">공사기간</th>
-              <th className="px-4 py-3 text-left">발송 대상</th>
-              <th className="px-4 py-3 text-center">상태</th>
+              <th className="px-1.5 sm:px-2 py-2 text-left font-semibold">접수번호</th>
+              <th className="px-1.5 sm:px-2 py-2 text-left font-semibold">배정담당자</th>
+              <th className="px-1.5 sm:px-2 py-2 text-left font-semibold">접수일시</th>
+              <th className="px-1.5 sm:px-2 py-2 text-left font-semibold">공사명</th>
+              <th className="px-1.5 sm:px-2 py-2 text-left font-semibold">시공업체</th>
+              <th className="px-1.5 sm:px-2 py-2 text-left font-semibold">신청자 이메일</th>
+              <th className="px-1.5 sm:px-2 py-2 text-left font-semibold">공사위치</th>
+              <th className="px-1.5 sm:px-2 py-2 text-left font-semibold">공사기간</th>
+              <th className="px-1.5 sm:px-2 py-2 text-center font-semibold">상태</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-100">
@@ -113,24 +126,36 @@ export default function SubmissionTable({ initial }: { initial: Submission[] }) 
                 const endDate = new Date(s.constructionEndDate).toLocaleDateString("ko-KR", {
                   month: "2-digit", day: "2-digit",
                 });
+                const cell = "px-1.5 sm:px-2 py-2 align-top min-w-0";
                 return (
                   <tr key={s.id} className="hover:bg-gray-50">
-                    <td className="px-4 py-3 font-mono text-xs text-gray-600 whitespace-nowrap">{s.submissionNumber ?? "-"}</td>
-                    <td className="px-4 py-3 text-gray-500 whitespace-nowrap">{createdAt}</td>
-                    <td className="px-4 py-3 font-medium text-gray-900 max-w-[160px] truncate">{s.projectName}</td>
-                    <td className="px-4 py-3 text-gray-700 whitespace-nowrap">{s.companyName}</td>
-                    <td className="px-4 py-3 text-gray-600">{s.submitterEmail ?? "-"}</td>
-                    <td className="px-4 py-3 text-gray-600 max-w-[180px] truncate">{s.fullAddress}</td>
-                    <td className="px-4 py-3 text-gray-500 whitespace-nowrap">{startDate} ~ {endDate}</td>
-                    <td className="px-4 py-3 text-gray-600">
-                      {s.emailSentTo ? (
-                        <span className="text-blue-600">{s.emailSentTo}</span>
-                      ) : (
-                        <span className="text-gray-400">-</span>
-                      )}
+                    <td className={`${cell} font-mono text-[10px] sm:text-xs text-gray-600 whitespace-nowrap overflow-hidden text-ellipsis`}>
+                      {s.submissionNumber ?? "-"}
                     </td>
-                    <td className="px-4 py-3 text-center">
-                      <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium ${st.cls}`}>
+                    <td
+                      className={`${cell} truncate ${s.cityContact?.personName ? "text-gray-800" : "text-gray-400"}`}
+                      title={s.cityContact?.personName ?? undefined}
+                    >
+                      {s.cityContact?.personName ?? "-"}
+                    </td>
+                    <td className={`${cell} text-gray-500 whitespace-nowrap overflow-hidden text-ellipsis`}>{createdAt}</td>
+                    <td className={`${cell} font-medium text-gray-900 truncate`} title={s.projectName}>
+                      {s.projectName}
+                    </td>
+                    <td className={`${cell} text-gray-700 truncate`} title={s.companyName}>
+                      {s.companyName}
+                    </td>
+                    <td className={`${cell} text-gray-600 truncate`} title={s.submitterEmail ?? undefined}>
+                      {s.submitterEmail ?? "-"}
+                    </td>
+                    <td className={`${cell} text-gray-600 truncate`} title={s.fullAddress}>
+                      {s.fullAddress}
+                    </td>
+                    <td className={`${cell} text-gray-500 whitespace-nowrap overflow-hidden text-ellipsis`}>
+                      {startDate}~{endDate}
+                    </td>
+                    <td className={`${cell} text-center`}>
+                      <span className={`inline-flex max-w-full px-1 sm:px-1.5 py-0.5 rounded-full text-[10px] sm:text-xs font-medium truncate ${st.cls}`}>
                         {st.label}
                       </span>
                     </td>

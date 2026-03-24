@@ -8,6 +8,7 @@ function escapeHtml(str: string): string {
 }
 
 interface EmailData {
+  submissionNumber: string;
   projectName: string;
   companyName: string;
   submitterEmail: string;
@@ -26,6 +27,7 @@ export function buildEmailSubject(data: EmailData): string {
 
 export function buildEmailHTML(data: EmailData): string {
   const e = {
+    submissionNumber: escapeHtml(data.submissionNumber),
     projectName: escapeHtml(data.projectName),
     companyName: escapeHtml(data.companyName),
     submitterEmail: escapeHtml(data.submitterEmail),
@@ -39,6 +41,10 @@ export function buildEmailHTML(data: EmailData): string {
 <head><meta charset="utf-8"></head>
 <body style="font-family:'Noto Sans KR',sans-serif;margin:0;padding:0;background:#f5f5f5;">
   <div style="max-width:600px;margin:20px auto;background:#fff;border-radius:8px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,0.1);">
+    <div style="padding:20px 32px;background:#f8fafc;border-bottom:1px solid #e2e8f0;">
+      <p style="margin:0 0 4px;font-size:13px;font-weight:600;color:#64748b;letter-spacing:-0.01em;">접수번호</p>
+      <p style="margin:0;font-size:20px;font-weight:700;color:#0f172a;font-family:ui-monospace,monospace;letter-spacing:0.02em;">${e.submissionNumber}</p>
+    </div>
     <div style="background:#2563eb;color:#fff;padding:24px 32px;">
       <h1 style="margin:0;font-size:20px;">굴착공사 유관기관 협의서 신청</h1>
     </div>

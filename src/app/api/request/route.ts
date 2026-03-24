@@ -114,11 +114,14 @@ export async function POST(request: NextRequest) {
     // 담당자 매칭
     const contact = await findContact(sido, sigungu);
 
+    const submissionNumber = await generateSubmissionNumber(contact?.department);
+
     let status = "no_contact";
     let emailSentTo: string | null = null;
 
     if (contact) {
       const emailData = {
+        submissionNumber,
         projectName,
         companyName,
         submitterEmail,
@@ -144,8 +147,6 @@ export async function POST(request: NextRequest) {
         status = "failed";
       }
     }
-
-    const submissionNumber = await generateSubmissionNumber(contact?.department);
 
     let submissionId: number | undefined;
     try {
