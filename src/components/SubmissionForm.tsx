@@ -102,29 +102,38 @@ export default function SubmissionForm() {
       }
     };
 
-    if (window.vw) {
-      initMap();
-      return;
-    }
+    let pollInterval: ReturnType<typeof setInterval> | null = null;
+
+    const waitForVw = (callback: () => void, timeout = 10000) => {
+      if (window.vw) { callback(); return; }
+      const start = Date.now();
+      pollInterval = setInterval(() => {
+        if (window.vw) {
+          clearInterval(pollInterval!);
+          pollInterval = null;
+          callback();
+        } else if (Date.now() - start > timeout) {
+          clearInterval(pollInterval!);
+          pollInterval = null;
+          setMapError("V-World 지도 로딩 시간 초과. 지도 없이 접수할 수 있습니다.");
+        }
+      }, 200);
+    };
 
     const existing = document.getElementById("vworld-map-script");
     if (existing) {
-      if (window.vw) {
-        // 스크립트가 이미 로드 완료됨 — 즉시 실행
-        initMap();
-      } else {
-        // 스크립트 태그는 있지만 아직 로드 중 — 완료 시 initMap 실행
-        existing.addEventListener("load", initMap, { once: true });
-      }
+      waitForVw(initMap);
       return;
     }
 
     const script = document.createElement("script");
     script.id = "vworld-map-script";
     script.src = `https://map.vworld.kr/js/vworldMapInit.js.do?version=2.0&apiKey=${apiKey}`;
-    script.onload = initMap;
+    script.onload = () => waitForVw(initMap);
     script.onerror = () => setMapError("V-World 지도 스크립트 로드에 실패했습니다. 지도 없이 접수할 수 있습니다.");
     document.head.appendChild(script);
+
+    return () => { if (pollInterval) clearInterval(pollInterval); };
   }, [mapCoords]);
 
   const validateFile = (file: File): string | null => {
