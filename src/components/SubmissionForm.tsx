@@ -73,7 +73,10 @@ export default function SubmissionForm() {
     if (!mapCoords || !mapContainerRef.current) return;
     const { lat, lng } = mapCoords;
     const apiKey = process.env.NEXT_PUBLIC_VWORLD_API_KEY;
-    if (!apiKey) return;
+    if (!apiKey) {
+      console.warn("[VWorld] NEXT_PUBLIC_VWORLD_API_KEY가 설정되지 않았습니다.");
+      return;
+    }
 
     const initMap = () => {
       if (!mapContainerRef.current || !window.vw) return;
@@ -106,8 +109,13 @@ export default function SubmissionForm() {
 
     const existing = document.getElementById("vworld-map-script");
     if (existing) {
-      // 스크립트 태그는 있지만 아직 로드 중 — 완료 시 initMap 실행
-      existing.addEventListener("load", initMap, { once: true });
+      if (window.vw) {
+        // 스크립트가 이미 로드 완료됨 — 즉시 실행
+        initMap();
+      } else {
+        // 스크립트 태그는 있지만 아직 로드 중 — 완료 시 initMap 실행
+        existing.addEventListener("load", initMap, { once: true });
+      }
       return;
     }
 
