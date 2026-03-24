@@ -7,7 +7,7 @@
 - **프레임워크**: Next.js 15 (App Router) + TypeScript + Tailwind CSS
 - **주소 검색**: Daum Postcode API (팝업)
 - **지오코딩**: V-World API (서버사이드, Edge 런타임 서울 리전)
-- **지도 표시**: V-World 2D JS SDK (클라이언트)
+- **지도 표시**: Leaflet + V-World WMTS 타일 (클라이언트, 동적 import)
 - **이메일**: Nodemailer (Gmail SMTP)
 - **DB**: Prisma 6 + PostgreSQL (Neon)
 - **인증**: 쿠키 기반 관리자 인증 (bcryptjs)
@@ -52,7 +52,7 @@ JihaSafety/
 │   │   ├── Header.tsx                    # 접수하기 + 담당자 현황 링크
 │   │   ├── Footer.tsx
 │   │   ├── KakaoAddressSearch.tsx        # Daum Postcode 팝업
-│   │   ├── SubmissionForm.tsx            # 굴착 요청 폼 (V-World 지도 포함)
+│   │   ├── SubmissionForm.tsx            # 굴착 요청 폼 (Leaflet 지도 포함)
 │   │   ├── ContactTable.tsx              # 관리자 담당자 테이블 (L1/L2 부서)
 │   │   ├── SubmissionTable.tsx           # 관리자 요청 이력 테이블
 │   │   └── LogoutButton.tsx
@@ -91,7 +91,7 @@ POSTGRES_URL_NON_POOLING="..."
 GMAIL_USER="..."
 GMAIL_APP_PASSWORD="..."
 VWORLD_API_KEY="..."                     # 서버사이드 지오코딩
-NEXT_PUBLIC_VWORLD_API_KEY="..."         # 클라이언트 V-World 2D 지도
+NEXT_PUBLIC_VWORLD_API_KEY="..."         # 클라이언트 V-World WMTS 타일 (Leaflet)
 ADMIN_PASSWORD_HASH="\$2b\$10\$..."      # $ → \$ 이스케이프 필요
 SESSION_SECRET="..."
 ```
@@ -100,7 +100,11 @@ SESSION_SECRET="..."
 
 ## V-World API
 - **지오코딩**: `/api/geocode?address=주소` → `{ lat, lng }` (Edge 런타임, 서울 리전 icn1)
-- **지도 표시**: V-World 2D JS SDK (`NEXT_PUBLIC_VWORLD_API_KEY` 사용)
+- **지도 표시**: Leaflet + V-World WMTS 타일 (`NEXT_PUBLIC_VWORLD_API_KEY` 사용)
+  - 타일 URL: `https://api.vworld.kr/req/wmts/1.0.0/{apiKey}/Base/{z}/{y}/{x}.png`
+  - Leaflet은 `useEffect` 내부에서 동적 `import('leaflet')` (SSR 안전)
+  - API Key 없으면 OpenStreetMap 타일로 폴백
+- V-World SDK(`vworldMapInit.js.do`)는 **사용 금지** — `document.write()` 사용으로 Next.js/React 호환 불가
 - V-World API는 **해외 IP 차단** → geocode 라우트는 반드시 Edge + `preferredRegion = "icn1"`
 - Daum Postcode는 축약형 시/도 반환 ("경기") → `normalizeAddress()`로 정식명칭 변환 ("경기도")
 
@@ -118,7 +122,7 @@ SESSION_SECRET="..."
 - 입력값 서버 사이드 검증, HTML 이스케이프 (XSS), Prisma ORM (SQL Injection 방지)
 - bcryptjs + HttpOnly/Secure/SameSite=Lax 쿠키, HMAC-SHA256 세션 (2시간)
 - 관리자 경로: `/sibum_bundang` (비공개)
-- CSP: Daum/Kakao + V-World 도메인 허용, `'unsafe-eval'` (V-World SDK 요구)
+- CSP: Daum/Kakao + V-World + unpkg.com(Leaflet 마커) 도메인 허용, `'unsafe-eval'`
 
 ## 개발 명령어
 ```bash
