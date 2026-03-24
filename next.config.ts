@@ -19,7 +19,7 @@ function contentSecurityPolicy(): string {
     scriptSrc,
     `style-src 'self' 'unsafe-inline' https://fonts.googleapis.com ${daumSrc} ${vworldSrc}`,
     `font-src 'self' https://fonts.gstatic.com https://*.daumcdn.net ${vworldSrc}`,
-    `img-src 'self' data: blob: ${daumSrc} ${vworldSrc}`,
+    `img-src 'self' data: blob: ${daumSrc} ${vworldSrc} https://unpkg.com`,
     connectSrc,
     `frame-src 'self' https://*.daum.net https://*.daumcdn.net https://*.kakao.com`,
     `worker-src blob:`,

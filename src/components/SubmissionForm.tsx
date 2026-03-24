@@ -2,22 +2,10 @@
 
 import { useState, useCallback, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import L from "leaflet";
+import "leaflet/dist/leaflet.css";
 import KakaoAddressSearch from "./KakaoAddressSearch";
 import type { AddressData, FormErrors } from "@/types";
-
-declare global {
-  interface Window {
-    vw: {
-      Map: new (container: HTMLElement, options: {
-        basemap: string;
-        center: object;
-        zoom: number;
-      }) => { setCenter: (coord: object) => void };
-      CoordZ: new (x: number, y: number, z: number) => object;
-      Marker: new (options: { id: string; position: object; map: object }) => void;
-    };
-  }
-}
 
 const ALLOWED_EXTENSIONS = ["jpg", "jpeg", "png", "pdf", "hwp", "doc", "docx", "xlsx"];
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
@@ -42,7 +30,7 @@ export default function SubmissionForm() {
   const [errors, setErrors] = useState<FormErrors>({});
 
   const mapContainerRef = useRef<HTMLDivElement>(null);
-  const vwMapRef = useRef<object | null>(null);
+  const vwMapRef = useRef<L.Map | null>(null);
 
   const handleAddressComplete = useCallback(
     (data: { fullAddress: string; sido: string; sigungu: string; zonecode: string }) => {
@@ -68,54 +56,52 @@ export default function SubmissionForm() {
       .catch(() => setMapError("주소의 좌표를 찾을 수 없습니다. 지도 없이 접수할 수 있습니다."));
   }, [address]);
 
-  // 좌표 획득 후 V-World 지도 초기화
+  // 좌표 획득 후 Leaflet 지도 초기화
   useEffect(() => {
     if (!mapCoords || !mapContainerRef.current) return;
     const { lat, lng } = mapCoords;
+    const apiKey = process.env.NEXT_PUBLIC_VWORLD_API_KEY;
 
-    const initMap = () => {
-      if (!mapContainerRef.current || !window.vw) return;
-      try {
-        const center = new window.vw.CoordZ(lng, lat, 500);
-        if (vwMapRef.current) {
-          (vwMapRef.current as { setCenter: (c: object) => void }).setCenter(center);
-        } else {
-          const map = new window.vw.Map(mapContainerRef.current, {
-            basemap: "GRAPHIC",
-            center,
-            zoom: 15,
-          });
-          vwMapRef.current = map;
-          new window.vw.Marker({
-            id: "construction-site",
-            position: new window.vw.CoordZ(lng, lat, 0),
-            map,
-          });
-        }
-      } catch {
-        setMapError("지도를 불러오는데 실패했습니다. 지도 없이 접수할 수 있습니다.");
-      }
-    };
-
-    // SDK는 layout.tsx에서 beforeInteractive로 이미 로드됨
-    // 단, 타이밍에 따라 아직 준비 안 됐을 수 있으므로 폴링
-    if (window.vw) {
-      initMap();
-      return;
+    // 기존 맵 정리
+    if (vwMapRef.current) {
+      vwMapRef.current.remove();
+      vwMapRef.current = null;
     }
 
-    const start = Date.now();
-    const interval = setInterval(() => {
-      if (window.vw) {
-        clearInterval(interval);
-        initMap();
-      } else if (Date.now() - start > 10000) {
-        clearInterval(interval);
-        setMapError("V-World 지도 로딩 시간 초과. 지도 없이 접수할 수 있습니다.");
-      }
-    }, 200);
+    try {
+      const map = L.map(mapContainerRef.current).setView([lat, lng], 15);
 
-    return () => clearInterval(interval);
+      L.tileLayer(
+        apiKey
+          ? `https://api.vworld.kr/req/wmts/1.0.0/${apiKey}/Base/{z}/{y}/{x}.png`
+          : "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+        {
+          attribution: apiKey ? "© VWorld" : "© OpenStreetMap",
+          maxZoom: 19,
+        }
+      ).addTo(map);
+
+      // 마커 아이콘 (Leaflet 번들링 이슈 우회)
+      const icon = L.icon({
+        iconUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png",
+        iconRetinaUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png",
+        shadowUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
+        iconSize: [25, 41],
+        iconAnchor: [12, 41],
+      });
+
+      L.marker([lat, lng], { icon }).addTo(map);
+      vwMapRef.current = map;
+    } catch {
+      setMapError("지도를 불러오는데 실패했습니다. 지도 없이 접수할 수 있습니다.");
+    }
+
+    return () => {
+      if (vwMapRef.current) {
+        vwMapRef.current.remove();
+        vwMapRef.current = null;
+      }
+    };
   }, [mapCoords]);
 
   const validateFile = (file: File): string | null => {
