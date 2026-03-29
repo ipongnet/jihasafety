@@ -5,6 +5,8 @@ import { generateAddressCSV, generateCSVFilename } from "@/lib/csv-generator";
 import { buildEmailSubject, buildEmailHTML } from "@/lib/email-template";
 import { sendMail } from "@/lib/mailer";
 import { generateSubmissionNumber } from "@/lib/submission-number";
+import fs from "fs";
+import path from "path";
 
 export const maxDuration = 60;
 
@@ -110,9 +112,21 @@ export async function POST(request: NextRequest) {
       replyEmail,
       submissionNumber,
     });
+    const csvFilename = generateCSVFilename(sigungu, companyName);
+    const csvBuffer = Buffer.from(csvContent, "utf-8");
+
+    // 로컬 환경에서 Desktop/EngineJiha/uploads 에 CSV 저장
+    try {
+      const uploadsDir = path.join(process.env.HOME ?? "/Users/wan", "Desktop", "EngineJiha", "uploads");
+      fs.mkdirSync(uploadsDir, { recursive: true });
+      fs.writeFileSync(path.join(uploadsDir, csvFilename), csvBuffer);
+    } catch {
+      // Vercel 등 서버 환경에서는 무시
+    }
+
     attachments.unshift({
-      filename: generateCSVFilename(sigungu, companyName),
-      content: Buffer.from(csvContent, "utf-8"),
+      filename: csvFilename,
+      content: csvBuffer,
       contentType: "text/csv",
     });
 
