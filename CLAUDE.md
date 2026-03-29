@@ -21,9 +21,10 @@
 ## 전체 업무 흐름
 1. 시공업체가 메인 페이지에서 굴착 요청 접수
 2. 시스템이 주소 기반으로 담당자 자동 매칭 → 접수번호 생성
-3. CSV 생성 (접수번호 포함) → 담당자에게 이메일 발송
+3. CSV 생성 (접수번호 + submission_id + 공사구간 포함) → 담당자에게 이메일 발송
 4. 내부 시스템이 저촉여부 판정 후 API 호출 → 접수자에게 자동 회신 이메일 (PDF 첨부)
 5. 관리자 페이지에서 접수 이력, 상태, 저촉유무 확인
+6. 담당자 미지정 건은 관리자가 상세 모달에서 수동 지정 → 접수번호 재생성 + 이메일 발송
 
 ## 프로젝트 구조
 
@@ -60,6 +61,7 @@ JihaSafety/
 │   │       ├── departments/[id]/route.ts # 부서 삭제
 │   │       ├── submissions/route.ts      # 요청 이력 조회
 │   │       ├── submissions/[id]/respond/route.ts  # 저촉여부 회신 API
+│   │       ├── submissions/[id]/assign/route.ts   # 관리자 담당자 수동 지정 + 이메일 발송
 │   │       └── auth/route.ts             # 관리자 로그인/로그아웃
 │   ├── components/
 │   │   ├── Header.tsx                    # 접수하기 + 담당자 현황 링크
@@ -100,6 +102,7 @@ JihaSafety/
 - `conflictStatus` (`저촉`/`비저촉`/null)
 - `responseMessage` (담당자 멘트)
 - `respondedAt` (회신 시각)
+- `constructionRoute` (GeoJSON LineString, 공사구간 폴리라인)
 - `cityContactId` (FK → CityContact)
 
 ## 접수번호 체계
@@ -134,13 +137,19 @@ RESPOND_API_KEY="..."                    # 회신 API 인증 키
 - V-World SDK(`vworldMapInit.js.do`)는 **사용 금지** — `document.write()` 사용으로 Next.js/React 호환 불가
 - V-World API는 **해외 IP 차단** → geocode 라우트는 반드시 Edge + `preferredRegion = "icn1"`
 - Daum Postcode는 축약형 시/도 반환 ("경기") → `normalizeAddress()`로 정식명칭 변환 ("경기도")
+- **마커 드래그**: 주소 지오코딩 후 마커를 드래그하여 정확한 위치로 조정 가능 (`adjustedCoords` state, 제출 시 `adjustedCoords ?? mapCoords` 사용)
+- **공사구간 그리기**: "공사구간 그리기" 버튼 → 지도 클릭으로 폴리라인 꼭짓점 추가 → GeoJSON LineString으로 저장
+  - 되돌리기(마지막 점 제거), 초기화(전체 삭제) 지원
+  - 외부 플러그인 없이 Leaflet 기본 API 사용
+  - GeoJSON 좌표 순서: `[longitude, latitude]` (RFC 7946), 내부 drawCoords는 `[lat, lng]` (Leaflet 규칙)
 
 ## 이메일 발송
 
 ### 접수 알림 (→ 담당자)
-- 제목: `[지하시설물 유관기관 협의서 요청] 공사명_시군구`
-- 첨부: CSV (접수번호 + GeoJSON 포함) + 시공업체 첨부 파일
-- CSV 컬럼 (11개): 접수번호, 제출일시, 업체명, 신청자 이메일, 전체주소, 시/도, 시/군/구, 위도, 경도, GeoJSON, 회신주소
+- 제목: `[날짜_접수번호] 주소_업체명` (예: `[20260329_경기분당-2026-0001] 분당구 정자동_OO건설`)
+- 첨부: CSV (접수번호 + submission_id + 공사구간 포함) + 시공업체 첨부 파일
+- CSV 파일명: `[날짜_접수번호] 주소_업체명.csv`
+- CSV 컬럼 (13개): 접수번호, submission_id, 제출일시, 업체명, 신청자 이메일, 전체주소, 시/도, 시/군/구, 위도, 경도, GeoJSON, 회신주소, 공사구간
 
 ### 저촉여부 회신 (→ 접수자)
 - 제목: `[지하시설물 저촉여부 회신] 접수번호_공사명`
@@ -164,6 +173,13 @@ curl -X POST https://jihasafety.vercel.app/api/submissions/{ID}/respond \
   -F "pdfFile=@/path/to/result.pdf"
 ```
 
+## 담당자 수동 지정 API (관리자)
+- **엔드포인트**: `POST /api/submissions/{id}/assign`
+- **인증**: 관리자 세션 쿠키
+- **Body** (JSON): `{ "contactId": number }`
+- **동작**: 담당자 할당 → 접수번호 재생성 (부서 기준 순차) → CSV 재생성 → 이메일 발송 → status `sent`로 변경
+- **제약**: `no_contact` 상태 건만 지정 가능 (이미 발송된 건 변경 불가)
+
 ## 담당자 매칭 (city-matcher.ts)
 1. **sido + sigungu 정확 매칭** (경기도 + 수원시 영통구)
 2. **sigungu만 정확 매칭** (sido 무관)
@@ -180,7 +196,7 @@ curl -X POST https://jihasafety.vercel.app/api/submissions/{ID}/respond \
 - **접수 이력 탭**: 접수번호, 접수일시, 담당부서, 담당자, 공사명, 공사위치, 상태, 저촉유무
   - 상태: 발송완료 / 발송실패 / 담당자없음 / **회신완료**
   - 저촉유무: 저촉(빨간) / 비저촉(초록) / - (미회신)
-  - 상세 모달: 전체 정보 + 회신 멘트/일시
+  - 상세 모달: 전체 정보 + 회신 멘트/일시 + **담당자 없음 건 수동 지정** (드롭다운 → 접수번호 재생성 + 이메일 발송)
 - **통계**: 총 접수, 발송완료, 발송실패, 담당자없음, 회신완료
 - **담당자 관리 탭**: 지역별 담당자 CRUD
 
