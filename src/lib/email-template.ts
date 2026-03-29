@@ -103,7 +103,19 @@ interface EmailData {
 }
 
 export function buildEmailSubject(data: EmailData): string {
-  return `[지하시설물 유관기관 협의서 요청] ${data.projectName}_${data.sigungu}`;
+  const now = new Date();
+  const date = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, "0")}${String(now.getDate()).padStart(2, "0")}`;
+  const subAddr = extractSubAddressFromSido(data.fullAddress, data.sido);
+  return `[${date}_${data.submissionNumber}] ${subAddr}`;
+}
+
+function extractSubAddressFromSido(fullAddress: string, sido: string): string {
+  let addr = fullAddress.startsWith(sido + " ")
+    ? fullAddress.slice(sido.length + 1).trim()
+    : fullAddress;
+  // 시/군 앞부분 제거 (구 이하만 남김), 예: "성남시 분당구 판교로 1" → "분당구 판교로 1"
+  addr = addr.replace(/^[^\s]*[시군]\s+/, "");
+  return addr.trim();
 }
 
 export function buildEmailHTML(data: EmailData): string {

@@ -46,13 +46,19 @@ export function generateAddressCSV(data: CSVData): string {
   return BOM + headers.join(",") + "\n" + row.join(",") + "\n";
 }
 
-export function generateCSVFilename(sigungu: string, companyName: string): string {
+export function generateCSVFilename(submissionNumber: string, fullAddress: string, sido: string): string {
   const now = new Date();
-  const y = now.getFullYear();
-  const m = String(now.getMonth() + 1).padStart(2, "0");
-  const d = String(now.getDate()).padStart(2, "0");
-  // 파일명에 사용할 수 없는 문자 제거
-  const safeSigungu = sigungu.replace(/[/\\:*?"<>|]/g, "").trim();
-  const safeCompany = companyName.replace(/[/\\:*?"<>|]/g, "").trim().slice(0, 20);
-  return `굴착확인요청_${safeSigungu}_${y}${m}${d}_${safeCompany}.csv`;
+  const date = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, "0")}${String(now.getDate()).padStart(2, "0")}`;
+  const subAddr = extractSubAddress(fullAddress, sido);
+  const safeSubNum = submissionNumber.replace(/[/\\:*?"<>|]/g, "").trim();
+  const safeSubAddr = subAddr.replace(/[/\\:*?"<>|]/g, "").trim().slice(0, 50);
+  return `[${date}_${safeSubNum}] ${safeSubAddr}.csv`;
+}
+
+function extractSubAddress(fullAddress: string, sido: string): string {
+  let addr = fullAddress.startsWith(sido + " ")
+    ? fullAddress.slice(sido.length + 1).trim()
+    : fullAddress;
+  addr = addr.replace(/^[^\s]*[시군]\s+/, "");
+  return addr.trim();
 }
