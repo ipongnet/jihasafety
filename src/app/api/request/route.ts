@@ -94,12 +94,39 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, message: "총 파일 크기가 10MB를 초과합니다." }, { status: 400 });
     }
 
-    // 담당자 매칭 + 접수번호 생성 (CSV에 포함해야 하므로 먼저)
+    // 담당자 매칭 + 접수번호 생성
     const normalizedSido = normalizeSido(sido);
     const contact = await findContact(sido, sigungu);
     const submissionNumber = await generateSubmissionNumber(contact?.department);
 
-    // CSV 생성
+    // DB에 먼저 저장 (submission_id 확보 → CSV에 포함)
+    let submissionId: number | undefined;
+    try {
+      const created = await prisma.submission.create({
+        data: {
+          projectName,
+          companyName,
+          submitterEmail,
+          constructionStartDate: startDate,
+          constructionEndDate: endDate,
+          fullAddress,
+          sido: normalizedSido,
+          sigungu,
+          latitude,
+          longitude,
+          emailSentTo: null,
+          status: contact ? "sent" : "no_contact",
+          consentGiven,
+          submissionNumber,
+          cityContactId: contact?.id ?? null,
+        },
+      });
+      submissionId = created.id;
+    } catch {
+      // DB 저장 실패 시 요청은 계속 처리
+    }
+
+    // CSV 생성 (submission_id 포함)
     const replyEmail = process.env.GMAIL_USER ?? "";
     const csvContent = generateAddressCSV({
       fullAddress,
@@ -111,6 +138,7 @@ export async function POST(request: NextRequest) {
       submitterEmail,
       replyEmail,
       submissionNumber,
+      submissionId: submissionId ?? 0,
     });
     const csvFilename = generateCSVFilename(sigungu, companyName);
     const csvBuffer = Buffer.from(csvContent, "utf-8");
@@ -160,32 +188,14 @@ export async function POST(request: NextRequest) {
       } catch {
         status = "failed";
       }
-    }
 
-    let submissionId: number | undefined;
-    try {
-      const submission = await prisma.submission.create({
-        data: {
-          projectName,
-          companyName,
-          submitterEmail,
-          constructionStartDate: startDate,
-          constructionEndDate: endDate,
-          fullAddress,
-          sido: normalizedSido,
-          sigungu,
-          latitude,
-          longitude,
-          emailSentTo,
-          status,
-          consentGiven,
-          submissionNumber,
-          cityContactId: contact?.id ?? null,
-        },
-      });
-      submissionId = submission.id;
-    } catch {
-      // DB 저장 실패 시 요청은 계속 처리 (이메일은 이미 발송됨)
+      // 이메일 발송 결과로 DB status 업데이트
+      if (submissionId) {
+        await prisma.submission.update({
+          where: { id: submissionId },
+          data: { status, emailSentTo },
+        }).catch(() => {});
+      }
     }
 
     let departmentDisplay: string | null = null;
