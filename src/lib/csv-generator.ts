@@ -46,13 +46,14 @@ export function generateAddressCSV(data: CSVData): string {
   return BOM + headers.join(",") + "\n" + row.join(",") + "\n";
 }
 
-export function generateCSVFilename(submissionNumber: string, fullAddress: string, sido: string): string {
+export function generateCSVFilename(submissionNumber: string, fullAddress: string, sido: string, companyName: string): string {
   const now = new Date();
   const date = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, "0")}${String(now.getDate()).padStart(2, "0")}`;
   const subAddr = extractSubAddress(fullAddress, sido);
   const safeSubNum = submissionNumber.replace(/[/\\:*?"<>|]/g, "").trim();
   const safeSubAddr = subAddr.replace(/[/\\:*?"<>|]/g, "").trim().slice(0, 50);
-  return `[${date}_${safeSubNum}] ${safeSubAddr}.csv`;
+  const safeCompany = companyName.replace(/[/\\:*?"<>|]/g, "").trim().slice(0, 20);
+  return `[${date}_${safeSubNum}] ${safeSubAddr}_${safeCompany}.csv`;
 }
 
 function extractSubAddress(fullAddress: string, sido: string): string {

@@ -106,7 +106,7 @@ export function buildEmailSubject(data: EmailData): string {
   const now = new Date();
   const date = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, "0")}${String(now.getDate()).padStart(2, "0")}`;
   const subAddr = extractSubAddressFromSido(data.fullAddress, data.sido);
-  return `[${date}_${data.submissionNumber}] ${subAddr}`;
+  return `[${date}_${data.submissionNumber}] ${subAddr}_${data.companyName}`;
 }
 
 function extractSubAddressFromSido(fullAddress: string, sido: string): string {

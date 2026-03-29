@@ -140,7 +140,7 @@ export async function POST(request: NextRequest) {
       submissionNumber,
       submissionId: submissionId ?? 0,
     });
-    const csvFilename = generateCSVFilename(submissionNumber, fullAddress, normalizedSido);
+    const csvFilename = generateCSVFilename(submissionNumber, fullAddress, normalizedSido, companyName);
     const csvBuffer = Buffer.from(csvContent, "utf-8");
 
     // 로컬 환경에서 Desktop/EngineJiha/uploads 에 CSV 저장
