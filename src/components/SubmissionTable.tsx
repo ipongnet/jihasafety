@@ -10,6 +10,16 @@ interface DepartmentRow {
   parentId: number | null;
 }
 
+interface ContactRow {
+  id: number;
+  sido: string;
+  sigungu: string;
+  personName: string;
+  email: string;
+  phone: string;
+  department: string | null;
+}
+
 interface Submission {
   id: number;
   submissionNumber: string | null;
@@ -47,13 +57,18 @@ const STATUS_LABEL: Record<string, { label: string; cls: string }> = {
 export default function SubmissionTable({
   initial,
   departments,
+  contacts,
 }: {
   initial: Submission[];
   departments: DepartmentRow[];
+  contacts: ContactRow[];
 }) {
+  const [submissions, setSubmissions] = useState(initial);
   const [filter, setFilter] = useState<"all" | "sent" | "failed" | "no_contact" | "replied">("all");
   const [search, setSearch] = useState("");
   const [detail, setDetail] = useState<Submission | null>(null);
+  const [assignContactId, setAssignContactId] = useState<string>("");
+  const [assigning, setAssigning] = useState(false);
 
   useEffect(() => {
     if (!detail) return;
@@ -67,7 +82,7 @@ export default function SubmissionTable({
   const deptLabel = (s: Submission) =>
     getDepartmentDisplayLabel(s.cityContact?.department ?? null, departments);
 
-  const filtered = initial.filter((s) => {
+  const filtered = submissions.filter((s) => {
     if (filter !== "all" && s.status !== filter) return false;
     if (search) {
       const q = search.toLowerCase();
@@ -87,11 +102,11 @@ export default function SubmissionTable({
   });
 
   const counts = {
-    all: initial.length,
-    sent: initial.filter((s) => s.status === "sent").length,
-    failed: initial.filter((s) => s.status === "failed").length,
-    no_contact: initial.filter((s) => s.status === "no_contact").length,
-    replied: initial.filter((s) => s.status === "replied").length,
+    all: submissions.length,
+    sent: submissions.filter((s) => s.status === "sent").length,
+    failed: submissions.filter((s) => s.status === "failed").length,
+    no_contact: submissions.filter((s) => s.status === "no_contact").length,
+    replied: submissions.filter((s) => s.status === "replied").length,
   };
 
   return (
@@ -166,7 +181,7 @@ export default function SubmissionTable({
                     <td className={cell}>
                       <button
                         type="button"
-                        onClick={() => setDetail(s)}
+                        onClick={() => { setDetail(s); setAssignContactId(""); }}
                         className="w-full text-center font-mono text-[10px] sm:text-xs text-blue-600 hover:text-blue-800 hover:underline truncate block"
                         title="상세 보기"
                       >
@@ -232,7 +247,7 @@ export default function SubmissionTable({
           </tbody>
         </table>
       </div>
-      <p className="text-xs text-gray-400">총 {initial.length}건 접수</p>
+      <p className="text-xs text-gray-400">총 {submissions.length}건 접수</p>
 
       {detail && (
         <div
@@ -304,14 +319,63 @@ export default function SubmissionTable({
                   ] : []),
                 ];
                 return (
-                  <dl className="grid grid-cols-[7rem_1fr] gap-x-3 gap-y-2.5">
-                    {rows.map(([label, value]) => (
-                      <div key={label} className="contents">
-                        <dt className="text-gray-500 text-xs sm:text-sm pt-0.5">{label}</dt>
-                        <dd className="text-gray-900 text-xs sm:text-sm break-words">{value}</dd>
+                  <>
+                    <dl className="grid grid-cols-[7rem_1fr] gap-x-3 gap-y-2.5">
+                      {rows.map(([label, value]) => (
+                        <div key={label} className="contents">
+                          <dt className="text-gray-500 text-xs sm:text-sm pt-0.5">{label}</dt>
+                          <dd className="text-gray-900 text-xs sm:text-sm break-words">{value}</dd>
+                        </div>
+                      ))}
+                    </dl>
+                    {d.status === "no_contact" && contacts.length > 0 && (
+                      <div className="mt-4 pt-4 border-t border-gray-200 space-y-3">
+                        <h3 className="text-sm font-semibold text-gray-900">담당자 지정</h3>
+                        <select
+                          value={assignContactId}
+                          onChange={(e) => setAssignContactId(e.target.value)}
+                          className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none bg-white"
+                        >
+                          <option value="">-- 담당자를 선택하세요 --</option>
+                          {contacts.map((c) => (
+                            <option key={c.id} value={String(c.id)}>
+                              {c.department ? `[${c.department}] ` : ""}{c.personName} ({c.sido} {c.sigungu}) - {c.email}
+                            </option>
+                          ))}
+                        </select>
+                        <button
+                          type="button"
+                          disabled={!assignContactId || assigning}
+                          onClick={async () => {
+                            setAssigning(true);
+                            try {
+                              const res = await fetch(`/api/submissions/${d.id}/assign`, {
+                                method: "POST",
+                                headers: { "Content-Type": "application/json" },
+                                body: JSON.stringify({ contactId: parseInt(assignContactId, 10) }),
+                              });
+                              if (res.ok) {
+                                const { submission: updated } = await res.json();
+                                setSubmissions(prev => prev.map(s => s.id === updated.id ? updated : s));
+                                setDetail(updated);
+                                setAssignContactId("");
+                              } else {
+                                const err = await res.json().catch(() => ({}));
+                                alert(err.message || "지정에 실패했습니다.");
+                              }
+                            } catch {
+                              alert("서버 오류가 발생했습니다.");
+                            } finally {
+                              setAssigning(false);
+                            }
+                          }}
+                          className="w-full bg-blue-600 text-white font-medium py-2 rounded-lg hover:bg-blue-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed text-sm"
+                        >
+                          {assigning ? "처리 중..." : "담당자 지정 및 이메일 발송"}
+                        </button>
                       </div>
-                    ))}
-                  </dl>
+                    )}
+                  </>
                 );
               })()}
             </div>

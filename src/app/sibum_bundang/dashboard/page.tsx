@@ -165,6 +165,11 @@ export default async function DashboardPage({ searchParams }: Props) {
           ) : (
             <SubmissionTable
               departments={departments.map((d) => ({ id: d.id, name: d.name, parentId: d.parentId }))}
+              contacts={contacts.map((c) => ({
+                id: c.id, sido: c.sido, sigungu: c.sigungu,
+                personName: c.personName, email: c.email, phone: c.phone,
+                department: c.department,
+              }))}
               initial={submissions.map((s) => ({
                 ...s,
                 constructionStartDate: s.constructionStartDate.toISOString(),
