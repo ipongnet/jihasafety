@@ -92,8 +92,12 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, message: "총 파일 크기가 10MB를 초과합니다." }, { status: 400 });
     }
 
-    // CSV 생성
+    // 담당자 매칭 + 접수번호 생성 (CSV에 포함해야 하므로 먼저)
     const normalizedSido = normalizeSido(sido);
+    const contact = await findContact(sido, sigungu);
+    const submissionNumber = await generateSubmissionNumber(contact?.department);
+
+    // CSV 생성
     const replyEmail = process.env.GMAIL_USER ?? "";
     const csvContent = generateAddressCSV({
       fullAddress,
@@ -104,17 +108,13 @@ export async function POST(request: NextRequest) {
       companyName,
       submitterEmail,
       replyEmail,
+      submissionNumber,
     });
     attachments.unshift({
       filename: generateCSVFilename(sigungu, companyName),
       content: Buffer.from(csvContent, "utf-8"),
       contentType: "text/csv",
     });
-
-    // 담당자 매칭
-    const contact = await findContact(sido, sigungu);
-
-    const submissionNumber = await generateSubmissionNumber(contact?.department);
 
     let status = "no_contact";
     let emailSentTo: string | null = null;
