@@ -170,7 +170,7 @@ curl -X POST https://jihasafety.vercel.app/api/submissions/{ID}/respond \
 
 ## 보안
 - 입력값 서버 사이드 검증, HTML 이스케이프 (XSS), Prisma ORM (SQL Injection 방지)
-- bcryptjs + HttpOnly/Secure/SameSite=Lax 쿠키, HMAC-SHA256 세션 (2시간)
+- bcryptjs + HttpOnly/Secure/SameSite=Lax 쿠키, HMAC-SHA256 세션 (  2시간)
 - 관리자 경로: `/sibum_bundang` (비공개)
 - 회신 API: Bearer 토큰 인증 (`RESPOND_API_KEY`)
 - CSP: Daum/Kakao + V-World + unpkg.com(Leaflet 마커) 도메인 허용, `'unsafe-eval'`
