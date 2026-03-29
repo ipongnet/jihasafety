@@ -16,11 +16,12 @@ interface CSVData {
   replyEmail: string;
   submissionNumber: string;
   submissionId: number;
+  constructionRoute?: string;
 }
 
 export function generateAddressCSV(data: CSVData): string {
   const BOM = "\uFEFF";
-  const headers = ["접수번호", "submission_id", "제출일시", "업체명", "신청자 이메일", "전체주소", "시/도", "시/군/구", "위도", "경도", "GeoJSON", "회신주소"];
+  const headers = ["접수번호", "submission_id", "제출일시", "업체명", "신청자 이메일", "전체주소", "시/도", "시/군/구", "위도", "경도", "GeoJSON", "회신주소", "공사구간"];
   const now = new Date().toLocaleString("ko-KR", { timeZone: "Asia/Seoul" });
 
   const geojson =
@@ -41,6 +42,7 @@ export function generateAddressCSV(data: CSVData): string {
     data.longitude?.toString() ?? "",
     geojson,
     escapeCSV(data.replyEmail),
+    data.constructionRoute ? escapeCSV(data.constructionRoute) : "",
   ];
 
   return BOM + headers.join(",") + "\n" + row.join(",") + "\n";

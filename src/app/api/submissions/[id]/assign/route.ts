@@ -59,6 +59,7 @@ export async function POST(
     replyEmail,
     submissionNumber: newSubmissionNumber,
     submissionId: submission.id,
+    constructionRoute: submission.constructionRoute ?? undefined,
   });
   const csvFilename = generateCSVFilename(newSubmissionNumber, submission.fullAddress, submission.sido, submission.companyName);
   const csvBuffer = Buffer.from(csvContent, "utf-8");

@@ -49,6 +49,7 @@ model Submission {
   conflictStatus        String?
   responseMessage       String?
   respondedAt           DateTime?
+  constructionRoute     String?
   cityContactId         Int?
   cityContact           CityContact? @relation(fields: [cityContactId], references: [id])
   createdAt             DateTime     @default(now())

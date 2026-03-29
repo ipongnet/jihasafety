@@ -39,6 +39,7 @@ export async function POST(request: NextRequest) {
     const consentGiven = formData.get("consentGiven") === "true";
     const selectedContactIdStr = formData.get("selectedContactId");
     const selectedContactId = selectedContactIdStr ? parseInt(String(selectedContactIdStr), 10) : null;
+    const constructionRoute = validateString(formData.get("constructionRoute"), 10000);
 
     if (!projectName || !companyName || !submitterEmail || !constructionStartDate || !constructionEndDate || !fullAddress || !sido || !sigungu) {
       return NextResponse.json({ success: false, message: "필수 항목을 모두 입력해주세요." }, { status: 400 });
@@ -128,6 +129,7 @@ export async function POST(request: NextRequest) {
           consentGiven,
           submissionNumber,
           cityContactId: contact?.id ?? null,
+          constructionRoute: constructionRoute ?? null,
         },
       });
       submissionId = created.id;
@@ -148,6 +150,7 @@ export async function POST(request: NextRequest) {
       replyEmail,
       submissionNumber,
       submissionId: submissionId ?? 0,
+      constructionRoute: constructionRoute ?? undefined,
     });
     const csvFilename = generateCSVFilename(submissionNumber, fullAddress, normalizedSido, companyName);
     const csvBuffer = Buffer.from(csvContent, "utf-8");

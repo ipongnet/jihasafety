@@ -2,7 +2,7 @@
 
 import { useState, useCallback, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import type { Map as LeafletMap } from "leaflet";
+import type { Map as LeafletMap, Marker, Polyline } from "leaflet";
 import "leaflet/dist/leaflet.css";
 import KakaoAddressSearch from "./KakaoAddressSearch";
 import type { AddressData, FormErrors } from "@/types";
@@ -32,6 +32,9 @@ export default function SubmissionForm() {
     id: number; sido: string; sigungu: string; personName: string; email: string; phone: string; department: string | null;
   }>>([]);
   const [selectedContactId, setSelectedContactId] = useState<string>("");
+  const [adjustedCoords, setAdjustedCoords] = useState<{ lat: number; lng: number } | null>(null);
+  const [drawMode, setDrawMode] = useState(false);
+  const [drawCoords, setDrawCoords] = useState<[number, number][]>([]);
   const [files, setFiles] = useState<File[]>([]);
   const [consentChecked, setConsentChecked] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -39,6 +42,10 @@ export default function SubmissionForm() {
 
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const vwMapRef = useRef<LeafletMap | null>(null);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const leafletRef = useRef<any>(null);
+  const markerRef = useRef<Marker | null>(null);
+  const polylineRef = useRef<Polyline | null>(null);
 
   const handleAddressComplete = useCallback(
     (data: { fullAddress: string; sido: string; sigungu: string; zonecode: string }) => {
@@ -47,6 +54,9 @@ export default function SubmissionForm() {
       setLocationConfirmed(false);
       setMapError(null);
       vwMapRef.current = null;
+      setAdjustedCoords(null);
+      setDrawMode(false);
+      setDrawCoords([]);
       setMatchedContact(null);
       setAvailableContacts([]);
       setSelectedContactId("");
@@ -102,12 +112,15 @@ export default function SubmissionForm() {
 
     const initMap = async () => {
       const L = (await import("leaflet")).default;
+      leafletRef.current = L;
 
       // 기존 맵 정리
       if (vwMapRef.current) {
         vwMapRef.current.remove();
         vwMapRef.current = null;
       }
+      polylineRef.current = null;
+      markerRef.current = null;
 
       try {
         const map = L.map(container).setView([lat, lng], 15);
@@ -131,7 +144,12 @@ export default function SubmissionForm() {
           iconAnchor: [12, 41],
         });
 
-        L.marker([lat, lng], { icon }).addTo(map);
+        const marker = L.marker([lat, lng], { icon, draggable: true }).addTo(map);
+        marker.on("dragend", () => {
+          const pos = marker.getLatLng();
+          setAdjustedCoords({ lat: pos.lat, lng: pos.lng });
+        });
+        markerRef.current = marker;
         vwMapRef.current = map;
       } catch {
         setMapError("지도를 불러오는데 실패했습니다. 지도 없이 접수할 수 있습니다.");
@@ -147,6 +165,51 @@ export default function SubmissionForm() {
       }
     };
   }, [mapCoords]);
+
+  // drawCoords 변경 시 폴리라인 업데이트
+  useEffect(() => {
+    const L = leafletRef.current;
+    const map = vwMapRef.current;
+    if (!L || !map) return;
+
+    if (polylineRef.current) {
+      polylineRef.current.remove();
+      polylineRef.current = null;
+    }
+
+    if (drawCoords.length >= 2) {
+      polylineRef.current = L.polyline(drawCoords, {
+        color: "#ef4444",
+        weight: 4,
+        opacity: 0.8,
+        dashArray: "10, 6",
+      }).addTo(map);
+    }
+  }, [drawCoords]);
+
+  // drawMode 변경 시 커서 + 클릭 핸들러
+  useEffect(() => {
+    const map = vwMapRef.current;
+    if (!map) return;
+    const container = map.getContainer();
+
+    const onClick = (e: { latlng: { lat: number; lng: number } }) => {
+      setDrawCoords(prev => [...prev, [e.latlng.lat, e.latlng.lng]]);
+    };
+
+    if (drawMode) {
+      container.style.cursor = "crosshair";
+      map.on("click", onClick);
+    } else {
+      container.style.cursor = "";
+      map.off("click", onClick);
+    }
+
+    return () => {
+      container.style.cursor = "";
+      map.off("click", onClick);
+    };
+  }, [drawMode]);
 
   const validateFile = (file: File): string | null => {
     const ext = file.name.split(".").pop()?.toLowerCase() ?? "";
@@ -224,9 +287,17 @@ export default function SubmissionForm() {
       formData.append("fullAddress", address.fullAddress);
       formData.append("sido", address.sido);
       formData.append("sigungu", address.sigungu);
-      if (mapCoords) {
-        formData.append("latitude", String(mapCoords.lat));
-        formData.append("longitude", String(mapCoords.lng));
+      const finalCoords = adjustedCoords ?? mapCoords;
+      if (finalCoords) {
+        formData.append("latitude", String(finalCoords.lat));
+        formData.append("longitude", String(finalCoords.lng));
+      }
+      if (drawCoords.length >= 2) {
+        const geojson = JSON.stringify({
+          type: "LineString",
+          coordinates: drawCoords.map(([lat, lng]) => [lng, lat]),
+        });
+        formData.append("constructionRoute", geojson);
       }
       formData.append("consentGiven", "true");
 
@@ -381,6 +452,41 @@ export default function SubmissionForm() {
                 )}
               </div>
             )}
+            {mapCoords && !mapError && (
+              <p className="text-xs text-gray-400 px-4 pt-2">마커를 드래그하여 정확한 위치로 조정할 수 있습니다.</p>
+            )}
+            <div className="px-4 py-2 bg-white border-t border-gray-200 flex items-center gap-2 flex-wrap">
+              <button
+                type="button"
+                onClick={() => setDrawMode(prev => !prev)}
+                className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                  drawMode
+                    ? "bg-red-100 text-red-700 border border-red-300"
+                    : "bg-gray-100 text-gray-600 hover:bg-gray-200 border border-gray-200"
+                }`}
+              >
+                {drawMode ? "그리기 종료" : "공사구간 그리기"}
+              </button>
+              {drawCoords.length > 0 && (
+                <>
+                  <button
+                    type="button"
+                    onClick={() => setDrawCoords(prev => prev.slice(0, -1))}
+                    className="px-3 py-1.5 rounded-lg text-xs font-medium bg-gray-100 text-gray-600 hover:bg-gray-200 border border-gray-200"
+                  >
+                    되돌리기
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setDrawCoords([])}
+                    className="px-3 py-1.5 rounded-lg text-xs font-medium bg-gray-100 text-gray-600 hover:bg-gray-200 border border-gray-200"
+                  >
+                    초기화
+                  </button>
+                  <span className="text-xs text-gray-400 ml-auto">{drawCoords.length}개 점</span>
+                </>
+              )}
+            </div>
             <div className="px-4 py-3 bg-gray-50 border-t border-gray-200">
               <label className="flex items-center gap-2.5 cursor-pointer">
                 <input
