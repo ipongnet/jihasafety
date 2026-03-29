@@ -100,9 +100,10 @@ export async function POST(request: NextRequest) {
     const normalizedSido = normalizeSido(sido);
     let contact = await findContact(sido, sigungu);
 
-    // 자동 매칭 실패 + 수동 선택된 담당자가 있으면 해당 담당자 사용
-    if (!contact && selectedContactId) {
-      contact = await prisma.cityContact.findUnique({ where: { id: selectedContactId } });
+    // selectedContactId가 있으면 해당 담당자로 덮어쓰기 (수동 선택 우선)
+    if (selectedContactId) {
+      const selectedContact = await prisma.cityContact.findUnique({ where: { id: selectedContactId } });
+      if (selectedContact) contact = selectedContact;
     }
 
     const submissionNumber = await generateSubmissionNumber(contact?.department);

@@ -24,7 +24,10 @@ export default function SubmissionForm() {
   const [mapCoords, setMapCoords] = useState<{ lat: number; lng: number } | null>(null);
   const [locationConfirmed, setLocationConfirmed] = useState(false);
   const [mapError, setMapError] = useState<string | null>(null);
-  const [contactExists, setContactExists] = useState<boolean | null>(null);
+  const [matchedContact, setMatchedContact] = useState<{
+    id: number; personName: string; email: string; department: string | null;
+  } | null>(null);
+  const [contactLoaded, setContactLoaded] = useState(false);
   const [availableContacts, setAvailableContacts] = useState<Array<{
     id: number; sido: string; sigungu: string; personName: string; email: string; phone: string; department: string | null;
   }>>([]);
@@ -44,9 +47,10 @@ export default function SubmissionForm() {
       setLocationConfirmed(false);
       setMapError(null);
       vwMapRef.current = null;
-      setContactExists(null);
+      setMatchedContact(null);
       setAvailableContacts([]);
       setSelectedContactId("");
+      setContactLoaded(false);
       setErrors((prev) => ({ ...prev, address: undefined, locationConfirmed: undefined }));
     },
     []
@@ -64,16 +68,29 @@ export default function SubmissionForm() {
       .catch(() => setMapError("주소의 좌표를 찾을 수 없습니다. 지도 없이 접수할 수 있습니다."));
   }, [address]);
 
-  // 주소 변경 시 담당자 존재 여부 확인
+  // 주소 변경 시 담당자 확인
   useEffect(() => {
-    if (!address) { setContactExists(null); setAvailableContacts([]); return; }
+    if (!address) {
+      setMatchedContact(null);
+      setAvailableContacts([]);
+      setSelectedContactId("");
+      setContactLoaded(false);
+      return;
+    }
+    setContactLoaded(false);
     fetch(`/api/contacts/check?sido=${encodeURIComponent(address.sido)}&sigungu=${encodeURIComponent(address.sigungu)}`)
       .then(res => res.json())
       .then(data => {
-        setContactExists(data.exists);
+        setMatchedContact(data.matchedContact ?? null);
         setAvailableContacts(data.contacts ?? []);
+        if (data.matchedContact) {
+          setSelectedContactId(String(data.matchedContact.id));
+        } else {
+          setSelectedContactId("");
+        }
+        setContactLoaded(true);
       })
-      .catch(() => setContactExists(null));
+      .catch(() => { setMatchedContact(null); setContactLoaded(true); });
   }, [address]);
 
   // 좌표 획득 후 Leaflet 지도 초기화
@@ -389,17 +406,24 @@ export default function SubmissionForm() {
         )}
       </div>
 
-      {/* 담당자 미등록 시 수동 선택 */}
-      {address && contactExists === false && (
-        <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 space-y-3">
-          <p className="text-sm text-amber-700">
-            해당 지역의 담당자가 등록되어 있지 않습니다.
-            아래 목록에서 담당자를 선택해주세요.
-          </p>
+      {/* 담당자 선택 */}
+      {address && contactLoaded && (
+        <div className={`rounded-lg p-4 space-y-3 ${matchedContact ? "bg-blue-50 border border-blue-200" : "bg-amber-50 border border-amber-200"}`}>
+          {matchedContact ? (
+            <p className="text-sm text-blue-700">
+              자동 매칭된 담당자: <strong>{matchedContact.personName}</strong> ({matchedContact.email})
+              {matchedContact.department && <span className="text-blue-500"> — {matchedContact.department}</span>}
+            </p>
+          ) : (
+            <p className="text-sm text-amber-700">
+              해당 지역의 담당자가 등록되어 있지 않습니다.
+              아래 목록에서 담당자를 선택해주세요.
+            </p>
+          )}
           {availableContacts.length > 0 && (
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                담당자 선택 <span className="text-sm font-normal text-gray-400">(선택)</span>
+                담당자 {matchedContact ? "변경" : "선택"} <span className="text-sm font-normal text-gray-400">(선택)</span>
               </label>
               <select
                 value={selectedContactId}
