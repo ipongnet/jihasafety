@@ -24,14 +24,6 @@ export default function SubmissionForm() {
   const [mapCoords, setMapCoords] = useState<{ lat: number; lng: number } | null>(null);
   const [locationConfirmed, setLocationConfirmed] = useState(false);
   const [mapError, setMapError] = useState<string | null>(null);
-  const [matchedContact, setMatchedContact] = useState<{
-    id: number; personName: string; email: string; department: string | null;
-  } | null>(null);
-  const [contactLoaded, setContactLoaded] = useState(false);
-  const [availableContacts, setAvailableContacts] = useState<Array<{
-    id: number; sido: string; sigungu: string; personName: string; email: string; phone: string; department: string | null;
-  }>>([]);
-  const [selectedContactId, setSelectedContactId] = useState<string>("");
   const [adjustedCoords, setAdjustedCoords] = useState<{ lat: number; lng: number } | null>(null);
   const [drawMode, setDrawMode] = useState(false);
   const [drawCoords, setDrawCoords] = useState<[number, number][]>([]);
@@ -57,10 +49,6 @@ export default function SubmissionForm() {
       setAdjustedCoords(null);
       setDrawMode(false);
       setDrawCoords([]);
-      setMatchedContact(null);
-      setAvailableContacts([]);
-      setSelectedContactId("");
-      setContactLoaded(false);
       setErrors((prev) => ({ ...prev, address: undefined, locationConfirmed: undefined }));
     },
     []
@@ -76,31 +64,6 @@ export default function SubmissionForm() {
       .then((res) => res.ok ? res.json() : Promise.reject(res))
       .then(({ lat, lng }) => setMapCoords({ lat, lng }))
       .catch(() => setMapError("주소의 좌표를 찾을 수 없습니다. 지도 없이 접수할 수 있습니다."));
-  }, [address]);
-
-  // 주소 변경 시 담당자 확인
-  useEffect(() => {
-    if (!address) {
-      setMatchedContact(null);
-      setAvailableContacts([]);
-      setSelectedContactId("");
-      setContactLoaded(false);
-      return;
-    }
-    setContactLoaded(false);
-    fetch(`/api/contacts/check?sido=${encodeURIComponent(address.sido)}&sigungu=${encodeURIComponent(address.sigungu)}`)
-      .then(res => res.json())
-      .then(data => {
-        setMatchedContact(data.matchedContact ?? null);
-        setAvailableContacts(data.contacts ?? []);
-        if (data.matchedContact) {
-          setSelectedContactId(String(data.matchedContact.id));
-        } else {
-          setSelectedContactId("");
-        }
-        setContactLoaded(true);
-      })
-      .catch(() => { setMatchedContact(null); setContactLoaded(true); });
   }, [address]);
 
   // 좌표 획득 후 Leaflet 지도 초기화
@@ -301,10 +264,6 @@ export default function SubmissionForm() {
       }
       formData.append("consentGiven", "true");
 
-      if (selectedContactId) {
-        formData.append("selectedContactId", selectedContactId);
-      }
-
       for (const file of files) {
         formData.append("files", file);
       }
@@ -453,40 +412,42 @@ export default function SubmissionForm() {
               </div>
             )}
             {mapCoords && !mapError && (
-              <p className="text-xs text-gray-400 px-4 pt-2">마커를 드래그하여 정확한 위치로 조정할 수 있습니다.</p>
+              <>
+                <p className="text-xs text-gray-400 px-4 pt-2">마커를 드래그하여 정확한 위치로 조정할 수 있습니다.</p>
+                <div className="px-4 py-2 bg-white border-t border-gray-200 flex items-center gap-2 flex-wrap">
+                  <button
+                    type="button"
+                    onClick={() => setDrawMode(prev => !prev)}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                      drawMode
+                        ? "bg-red-100 text-red-700 border border-red-300"
+                        : "bg-gray-100 text-gray-600 hover:bg-gray-200 border border-gray-200"
+                    }`}
+                  >
+                    {drawMode ? "그리기 종료" : "공사구간 그리기"}
+                  </button>
+                  {drawCoords.length > 0 && (
+                    <>
+                      <button
+                        type="button"
+                        onClick={() => setDrawCoords(prev => prev.slice(0, -1))}
+                        className="px-3 py-1.5 rounded-lg text-xs font-medium bg-gray-100 text-gray-600 hover:bg-gray-200 border border-gray-200"
+                      >
+                        되돌리기
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setDrawCoords([])}
+                        className="px-3 py-1.5 rounded-lg text-xs font-medium bg-gray-100 text-gray-600 hover:bg-gray-200 border border-gray-200"
+                      >
+                        초기화
+                      </button>
+                      <span className="text-xs text-gray-400 ml-auto">{drawCoords.length}개 점</span>
+                    </>
+                  )}
+                </div>
+              </>
             )}
-            <div className="px-4 py-2 bg-white border-t border-gray-200 flex items-center gap-2 flex-wrap">
-              <button
-                type="button"
-                onClick={() => setDrawMode(prev => !prev)}
-                className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
-                  drawMode
-                    ? "bg-red-100 text-red-700 border border-red-300"
-                    : "bg-gray-100 text-gray-600 hover:bg-gray-200 border border-gray-200"
-                }`}
-              >
-                {drawMode ? "그리기 종료" : "공사구간 그리기"}
-              </button>
-              {drawCoords.length > 0 && (
-                <>
-                  <button
-                    type="button"
-                    onClick={() => setDrawCoords(prev => prev.slice(0, -1))}
-                    className="px-3 py-1.5 rounded-lg text-xs font-medium bg-gray-100 text-gray-600 hover:bg-gray-200 border border-gray-200"
-                  >
-                    되돌리기
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setDrawCoords([])}
-                    className="px-3 py-1.5 rounded-lg text-xs font-medium bg-gray-100 text-gray-600 hover:bg-gray-200 border border-gray-200"
-                  >
-                    초기화
-                  </button>
-                  <span className="text-xs text-gray-400 ml-auto">{drawCoords.length}개 점</span>
-                </>
-              )}
-            </div>
             <div className="px-4 py-3 bg-gray-50 border-t border-gray-200">
               <label className="flex items-center gap-2.5 cursor-pointer">
                 <input
@@ -511,42 +472,6 @@ export default function SubmissionForm() {
           </div>
         )}
       </div>
-
-      {/* 담당자 선택 */}
-      {address && contactLoaded && (
-        <div className={`rounded-lg p-4 space-y-3 ${matchedContact ? "bg-blue-50 border border-blue-200" : "bg-amber-50 border border-amber-200"}`}>
-          {matchedContact ? (
-            <p className="text-sm text-blue-700">
-              자동 매칭된 담당자: <strong>{matchedContact.personName}</strong> ({matchedContact.email})
-              {matchedContact.department && <span className="text-blue-500"> — {matchedContact.department}</span>}
-            </p>
-          ) : (
-            <p className="text-sm text-amber-700">
-              해당 지역의 담당자가 등록되어 있지 않습니다.
-              아래 목록에서 담당자를 선택해주세요.
-            </p>
-          )}
-          {availableContacts.length > 0 && (
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                담당자 {matchedContact ? "변경" : "선택"} <span className="text-sm font-normal text-gray-400">(선택)</span>
-              </label>
-              <select
-                value={selectedContactId}
-                onChange={(e) => setSelectedContactId(e.target.value)}
-                className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none bg-white"
-              >
-                <option value="">-- 담당자를 선택하세요 --</option>
-                {availableContacts.map((c) => (
-                  <option key={c.id} value={String(c.id)}>
-                    {c.department ? `[${c.department}] ` : ""}{c.personName} ({c.sido} {c.sigungu}) - {c.email}
-                  </option>
-                ))}
-              </select>
-            </div>
-          )}
-        </div>
-      )}
 
       {/* 섹션 3: 첨부파일 */}
       <div className="space-y-2">

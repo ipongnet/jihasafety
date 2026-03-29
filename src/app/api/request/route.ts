@@ -37,8 +37,6 @@ export async function POST(request: NextRequest) {
     const latStr = formData.get("latitude");
     const lngStr = formData.get("longitude");
     const consentGiven = formData.get("consentGiven") === "true";
-    const selectedContactIdStr = formData.get("selectedContactId");
-    const selectedContactId = selectedContactIdStr ? parseInt(String(selectedContactIdStr), 10) : null;
     const constructionRoute = validateString(formData.get("constructionRoute"), 10000);
 
     if (!projectName || !companyName || !submitterEmail || !constructionStartDate || !constructionEndDate || !fullAddress || !sido || !sigungu) {
@@ -99,14 +97,7 @@ export async function POST(request: NextRequest) {
 
     // 담당자 매칭 + 접수번호 생성
     const normalizedSido = normalizeSido(sido);
-    let contact = await findContact(sido, sigungu);
-
-    // selectedContactId가 있으면 해당 담당자로 덮어쓰기 (수동 선택 우선)
-    if (selectedContactId) {
-      const selectedContact = await prisma.cityContact.findUnique({ where: { id: selectedContactId } });
-      if (selectedContact) contact = selectedContact;
-    }
-
+    const contact = await findContact(sido, sigungu);
     const submissionNumber = await generateSubmissionNumber(contact?.department);
 
     // DB에 먼저 저장 (submission_id 확보 → CSV에 포함)
