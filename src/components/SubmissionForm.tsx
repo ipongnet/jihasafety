@@ -24,6 +24,11 @@ export default function SubmissionForm() {
   const [mapCoords, setMapCoords] = useState<{ lat: number; lng: number } | null>(null);
   const [locationConfirmed, setLocationConfirmed] = useState(false);
   const [mapError, setMapError] = useState<string | null>(null);
+  const [contactExists, setContactExists] = useState<boolean | null>(null);
+  const [availableContacts, setAvailableContacts] = useState<Array<{
+    id: number; sido: string; sigungu: string; personName: string; email: string; phone: string; department: string | null;
+  }>>([]);
+  const [selectedContactId, setSelectedContactId] = useState<string>("");
   const [files, setFiles] = useState<File[]>([]);
   const [consentChecked, setConsentChecked] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -39,6 +44,9 @@ export default function SubmissionForm() {
       setLocationConfirmed(false);
       setMapError(null);
       vwMapRef.current = null;
+      setContactExists(null);
+      setAvailableContacts([]);
+      setSelectedContactId("");
       setErrors((prev) => ({ ...prev, address: undefined, locationConfirmed: undefined }));
     },
     []
@@ -54,6 +62,18 @@ export default function SubmissionForm() {
       .then((res) => res.ok ? res.json() : Promise.reject(res))
       .then(({ lat, lng }) => setMapCoords({ lat, lng }))
       .catch(() => setMapError("주소의 좌표를 찾을 수 없습니다. 지도 없이 접수할 수 있습니다."));
+  }, [address]);
+
+  // 주소 변경 시 담당자 존재 여부 확인
+  useEffect(() => {
+    if (!address) { setContactExists(null); setAvailableContacts([]); return; }
+    fetch(`/api/contacts/check?sido=${encodeURIComponent(address.sido)}&sigungu=${encodeURIComponent(address.sigungu)}`)
+      .then(res => res.json())
+      .then(data => {
+        setContactExists(data.exists);
+        setAvailableContacts(data.contacts ?? []);
+      })
+      .catch(() => setContactExists(null));
   }, [address]);
 
   // 좌표 획득 후 Leaflet 지도 초기화
@@ -192,6 +212,10 @@ export default function SubmissionForm() {
         formData.append("longitude", String(mapCoords.lng));
       }
       formData.append("consentGiven", "true");
+
+      if (selectedContactId) {
+        formData.append("selectedContactId", selectedContactId);
+      }
 
       for (const file of files) {
         formData.append("files", file);
@@ -364,6 +388,35 @@ export default function SubmissionForm() {
           </div>
         )}
       </div>
+
+      {/* 담당자 미등록 시 수동 선택 */}
+      {address && contactExists === false && (
+        <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 space-y-3">
+          <p className="text-sm text-amber-700">
+            해당 지역의 담당자가 등록되어 있지 않습니다.
+            아래 목록에서 담당자를 선택해주세요.
+          </p>
+          {availableContacts.length > 0 && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                담당자 선택 <span className="text-sm font-normal text-gray-400">(선택)</span>
+              </label>
+              <select
+                value={selectedContactId}
+                onChange={(e) => setSelectedContactId(e.target.value)}
+                className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none bg-white"
+              >
+                <option value="">-- 담당자를 선택하세요 --</option>
+                {availableContacts.map((c) => (
+                  <option key={c.id} value={String(c.id)}>
+                    {c.department ? `[${c.department}] ` : ""}{c.personName} ({c.sido} {c.sigungu}) - {c.email}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* 섹션 3: 첨부파일 */}
       <div className="space-y-2">
