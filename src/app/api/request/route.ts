@@ -7,6 +7,7 @@ import { sendMail } from "@/lib/mailer";
 import { generateSubmissionNumber } from "@/lib/submission-number";
 import fs from "fs";
 import path from "path";
+import { uploadFile } from "@/lib/storage-client";
 
 export const maxDuration = 60;
 
@@ -153,6 +154,15 @@ export async function POST(request: NextRequest) {
       fs.writeFileSync(path.join(uploadsDir, csvFilename), csvBuffer);
     } catch {
       // Vercel 등 서버 환경에서는 무시
+    }
+
+    // Supabase Storage outbox/ 업로드 (망연계 시뮬레이션)
+    console.log("[storage] uploadFile 시도:", csvFilename, "SUPABASE_URL:", !!process.env.SUPABASE_URL, "KEY:", !!process.env.SUPABASE_SERVICE_KEY);
+    try {
+      await uploadFile(`outbox/${csvFilename}`, csvBuffer, "text/csv");
+      console.log("[storage] uploadFile 성공:", csvFilename);
+    } catch (e) {
+      console.error("[storage] outbox 업로드 실패:", e);
     }
 
     attachments.unshift({
