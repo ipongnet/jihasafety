@@ -59,7 +59,7 @@ export async function uploadFile(
   const res = await fetch(`${url}/storage/v1/object/${bucket}/${path}`, {
     method: "POST",
     headers: headers(key, { "Content-Type": contentType }),
-    body: buffer,
+    body: new Uint8Array(buffer),
   });
   if (!res.ok) throw new Error(`uploadFile failed: ${res.status} ${await res.text()}`);
 }
