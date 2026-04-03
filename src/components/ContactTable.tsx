@@ -76,13 +76,29 @@ export default function ContactTable({ initial, initialDepartments }: { initial:
   const defaultL1 = l1Depts.find((d) => d.name.includes("경기"))?.id ?? l1Depts[0]?.id ?? 0;
   const [regionFilter, setRegionFilter] = useState<number | "all">(defaultL1);
   const contactToL1Id = (c: Contact): number | null => {
-    // 1) 부서가 L1(지역본부) 자체이면 직접 매칭
-    const deptAsL1 = l1Depts.find((d) => d.name === c.department);
-    if (deptAsL1) return deptAsL1.id;
-    // 2) 부서가 L2이면 sido 기반으로 올바른 L1 찾기
+    if (c.department) {
+      const matches = departments.filter((d) => d.name === c.department);
+      if (matches.length === 1) {
+        // 유일한 부서명 (양주지사, 분당지사 등) → 부서 계층으로 L1 결정
+        const dept = matches[0];
+        return dept.parentId ? dept.parentId : dept.id;
+      }
+      if (matches.length > 1) {
+        // 동명 부서 (관로보전부 등) → sido 기반으로 올바른 L1 찾기
+        const keyword = SIDO_TO_L1_KEYWORD[c.sido];
+        if (keyword) {
+          const match = matches.find((d) => {
+            if (!d.parentId) return false;
+            const parent = departments.find((p) => p.id === d.parentId);
+            return parent?.name.includes(keyword) ?? false;
+          });
+          if (match?.parentId) return match.parentId;
+        }
+      }
+    }
+    // 폴백: sido 기반
     const keyword = SIDO_TO_L1_KEYWORD[c.sido];
-    if (!keyword) return null;
-    return l1Depts.find((d) => d.name.includes(keyword))?.id ?? null;
+    return keyword ? l1Depts.find((d) => d.name.includes(keyword))?.id ?? null : null;
   };
 
   // 부서 관리

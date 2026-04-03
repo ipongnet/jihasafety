@@ -75,12 +75,29 @@ export default function SubmissionTable({
   const defaultL1 = l1Depts.find((d) => d.name.includes("경기"))?.id ?? l1Depts[0]?.id ?? 0;
   const [regionFilter, setRegionFilter] = useState<number | "all">(defaultL1);
 
-  // sido → L1 id 매핑 함수
-  const sidoToL1Id = (sido: string): number | null => {
-    const keyword = SIDO_TO_L1_KEYWORD[sido];
-    if (!keyword) return null;
-    const l1 = l1Depts.find((d) => d.name.includes(keyword));
-    return l1?.id ?? null;
+  // 접수건의 담당부서 계층으로 L1 결정
+  const submissionToL1Id = (s: Submission): number | null => {
+    const deptName = s.cityContact?.department;
+    if (deptName) {
+      const matches = departments.filter((d) => d.name === deptName);
+      if (matches.length === 1) {
+        const dept = matches[0];
+        return dept.parentId ? dept.parentId : dept.id;
+      }
+      if (matches.length > 1) {
+        const keyword = SIDO_TO_L1_KEYWORD[s.sido];
+        if (keyword) {
+          const match = matches.find((d) => {
+            if (!d.parentId) return false;
+            const parent = departments.find((p) => p.id === d.parentId);
+            return parent?.name.includes(keyword) ?? false;
+          });
+          if (match?.parentId) return match.parentId;
+        }
+      }
+    }
+    const keyword = SIDO_TO_L1_KEYWORD[s.sido];
+    return keyword ? l1Depts.find((d) => d.name.includes(keyword))?.id ?? null : null;
   };
   const [detail, setDetail] = useState<Submission | null>(null);
   const [assignContactId, setAssignContactId] = useState<string>("");
@@ -120,7 +137,7 @@ export default function SubmissionTable({
   // 지역본부 필터 적용
   const regionFiltered = regionFilter === "all"
     ? submissions
-    : submissions.filter((s) => sidoToL1Id(s.sido) === regionFilter);
+    : submissions.filter((s) => submissionToL1Id(s) === regionFilter);
 
   const filtered = regionFiltered.filter((s) => {
     if (filter !== "all" && s.status !== filter) return false;
