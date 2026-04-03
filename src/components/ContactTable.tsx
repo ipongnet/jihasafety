@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import { SIDO_LIST, SIGUNGU_MAP } from "@/data/korea-regions";
-import { getDepartmentDisplayLabel } from "@/lib/department-display";
+import { getDepartmentDisplayLabel, SIDO_TO_L1_KEYWORD } from "@/lib/department-display";
+import { shortenDeptDisplayName } from "@/lib/dept-name-shorten";
 
 interface Contact {
   id: number;
@@ -70,6 +71,16 @@ export default function ContactTable({ initial, initialDepartments }: { initial:
   const [saving, setSaving] = useState(false);
   const [search, setSearch] = useState("");
 
+  // L1 지역본부 필터
+  const l1Depts = initialDepartments.filter((d) => !d.parentId);
+  const defaultL1 = l1Depts.find((d) => d.name.includes("경기"))?.id ?? l1Depts[0]?.id ?? 0;
+  const [regionFilter, setRegionFilter] = useState<number | "all">(defaultL1);
+  const sidoToL1Id = (sido: string): number | null => {
+    const keyword = SIDO_TO_L1_KEYWORD[sido];
+    if (!keyword) return null;
+    return l1Depts.find((d) => d.name.includes(keyword))?.id ?? null;
+  };
+
   // 부서 관리
   const [departments, setDepartments] = useState<Department[]>(initialDepartments);
   const [showDeptManager, setShowDeptManager] = useState(false);
@@ -125,7 +136,11 @@ export default function ContactTable({ initial, initialDepartments }: { initial:
     setDepartments((prev) => prev.filter((d) => d.id !== id));
   };
 
-  const filtered = contacts.filter((c) => {
+  const regionFiltered = regionFilter === "all"
+    ? contacts
+    : contacts.filter((c) => sidoToL1Id(c.sido) === regionFilter);
+
+  const filtered = regionFiltered.filter((c) => {
     if (!search) return true;
     return (
       c.sido.includes(search) ||
@@ -204,6 +219,34 @@ export default function ContactTable({ initial, initialDepartments }: { initial:
 
   return (
     <div className="space-y-4">
+      {/* 지역본부 필터 */}
+      <div className="flex items-center gap-2">
+        <span className="text-sm font-medium text-gray-600 whitespace-nowrap">지역본부</span>
+        <div className="flex gap-1 flex-wrap">
+          <button
+            type="button"
+            onClick={() => setRegionFilter("all")}
+            className={`px-2.5 py-1 rounded-lg text-xs font-medium transition-colors ${
+              regionFilter === "all" ? "bg-gray-800 text-white" : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+            }`}
+          >
+            전체
+          </button>
+          {l1Depts.map((d) => (
+            <button
+              key={d.id}
+              type="button"
+              onClick={() => setRegionFilter(d.id)}
+              className={`px-2.5 py-1 rounded-lg text-xs font-medium transition-colors ${
+                regionFilter === d.id ? "bg-gray-800 text-white" : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+              }`}
+            >
+              {shortenDeptDisplayName(d.name)}
+            </button>
+          ))}
+        </div>
+      </div>
+
       {/* 검색 + 버튼 */}
       <div className="flex items-center justify-between gap-3">
         <input
