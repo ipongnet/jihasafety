@@ -24,7 +24,21 @@
       "Skill(update-config)",
       "WebFetch(domain:dapi.kakao.com)",
       "Bash(cp:*)",
-      "Bash(xargs sed:*)"
+      "Bash(xargs sed:*)",
+      "Bash(find /Users/wan/Desktop/JihaSafety -type f \\\\\\(-name *.tsx -o -name *.ts -o -name *.json -o -name *.js \\\\\\) ! -path */node_modules/* ! -path */.next/* ! -path */.git/*)",
+      "Bash(curl -s \"https://api.vworld.kr/req/address?service=address&request=getcoord&version=2.0&crs=epsg:4326&address=경기도+성남시+분당구&refine=false&simple=false&format=json&type=road&key=28FAF601-2358-3FE7-A01C-A6A4F3DF7F60\")",
+      "Bash(curl -v \"https://api.vworld.kr/req/address?service=address&request=getcoord&version=2.0&crs=epsg:4326&address=%EA%B2%BD%EA%B8%B0%EB%8F%84+%EC%84%B1%EB%82%A8%EC%8B%9C+%EB%B6%84%EB%8B%B9%EA%B5%AC&refine=false&simple=false&format=json&type=road&key=28FAF601-2358-3FE7-A01C-A6A4F3DF7F60\")",
+      "Bash(curl:*)",
+      "Bash(python3 -m json.tool)",
+      "Bash(cat /Users/wan/Desktop/JihaSafety/src/app/api/submissions/[id]/respond/route.ts)",
+      "Bash(mkdir -p /tmp/hwpx_extract)",
+      "Read(//tmp/**)",
+      "Bash(rm -rf *)",
+      "Bash(unzip -o \"/Users/wan/Downloads/붙임2. 신규 혁신과제 작성 양식.hwpx\")",
+      "Bash(find ~/Desktop/EngineJiha/app -name *.py)",
+      "Bash(echo 'DELETE FROM \"\"\"\"Submission\"\"\"\";')",
+      "Bash(psql:*)",
+      "Bash(ls:*)"
     ]
   },
   "hooks": {
