@@ -157,12 +157,13 @@ export async function POST(request: NextRequest) {
     }
 
     // Supabase Storage outbox/ 업로드 (망연계 시뮬레이션)
-    console.log("[storage] uploadFile 시도:", csvFilename, "SUPABASE_URL:", !!process.env.SUPABASE_URL, "KEY:", !!process.env.SUPABASE_SERVICE_KEY);
+    let _uploadError: string | null = null;
+    let _uploadOk = false;
     try {
       await uploadFile(`outbox/${csvFilename}`, csvBuffer, "text/csv");
-      console.log("[storage] uploadFile 성공:", csvFilename);
+      _uploadOk = true;
     } catch (e) {
-      console.error("[storage] outbox 업로드 실패:", e);
+      _uploadError = e instanceof Error ? e.message : String(e);
     }
 
     attachments.unshift({
@@ -235,6 +236,8 @@ export async function POST(request: NextRequest) {
         hasSupabaseUrl: !!process.env.SUPABASE_URL,
         hasSupabaseKey: !!process.env.SUPABASE_SERVICE_KEY,
         bucket: process.env.SUPABASE_BUCKET ?? "(unset)",
+        uploadOk: _uploadOk,
+        uploadError: _uploadError,
       },
     });
   } catch {
