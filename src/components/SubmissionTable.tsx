@@ -101,7 +101,7 @@ export default function SubmissionTable({
   }, [detail]);
 
   const deptLabel = (s: Submission) =>
-    getDepartmentDisplayLabel(s.cityContact?.department ?? null, departments);
+    getDepartmentDisplayLabel(s.cityContact?.department ?? null, departments, s.sido);
 
   const filtered = submissions.filter((s) => {
     if (filter !== "all" && s.status !== filter) return false;

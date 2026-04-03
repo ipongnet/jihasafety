@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { SIDO_LIST, SIGUNGU_MAP } from "@/data/korea-regions";
-import { shortenDeptDisplayName } from "@/lib/dept-name-shorten";
+import { getDepartmentDisplayLabel } from "@/lib/department-display";
 
 interface Contact {
   id: number;
@@ -78,15 +78,8 @@ export default function ContactTable({ initial, initialDepartments }: { initial:
   const [deptError, setDeptError] = useState("");
   const [bulkAdding, setBulkAdding] = useState(false);
 
-  const getDeptDisplay = (deptName: string | null) => {
-    if (!deptName) return "-";
-    const dept = departments.find((d) => d.name === deptName);
-    if (!dept || !dept.parentId) return shortenDeptDisplayName(deptName);
-    const parent = departments.find((d) => d.id === dept.parentId);
-    return parent
-      ? `${shortenDeptDisplayName(parent.name)} > ${shortenDeptDisplayName(deptName)}`
-      : shortenDeptDisplayName(deptName);
-  };
+  const getDeptDisplay = (deptName: string | null, sido?: string) =>
+    getDepartmentDisplayLabel(deptName, departments, sido);
 
   const addDepartment = async () => {
     if (!newDeptName.trim()) return;
@@ -139,7 +132,7 @@ export default function ContactTable({ initial, initialDepartments }: { initial:
       c.sigungu.includes(search) ||
       c.personName.includes(search) ||
       c.email.includes(search) ||
-      (c.department != null && c.department !== "" && getDeptDisplay(c.department).includes(search))
+      (c.department != null && c.department !== "" && getDeptDisplay(c.department, c.sido).includes(search))
     );
   });
 
@@ -430,7 +423,7 @@ export default function ContactTable({ initial, initialDepartments }: { initial:
                     <td className="px-3 py-2.5 text-center text-gray-700 leading-snug">{c.personName}</td>
                     <td className="px-3 py-2.5 text-center text-blue-600 leading-snug">{c.email}</td>
                     <td className="px-3 py-2.5 text-center text-gray-600 leading-snug">{c.phone}</td>
-                    <td className="px-3 py-2.5 text-center text-gray-500 leading-snug">{getDeptDisplay(c.department)}</td>
+                    <td className="px-3 py-2.5 text-center text-gray-500 leading-snug">{getDeptDisplay(c.department, c.sido)}</td>
                     <td className="px-3 py-2.5 text-center">
                       <div className="flex items-center justify-center gap-1.5 flex-wrap">
                         <button

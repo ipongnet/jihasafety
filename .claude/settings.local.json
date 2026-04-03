@@ -38,7 +38,9 @@
       "Bash(find ~/Desktop/EngineJiha/app -name *.py)",
       "Bash(echo 'DELETE FROM \"\"\"\"Submission\"\"\"\";')",
       "Bash(psql:*)",
-      "Bash(ls:*)"
+      "Bash(ls:*)",
+      "Bash(gh api:*)",
+      "Bash(git rm:*)"
     ]
   },
   "hooks": {

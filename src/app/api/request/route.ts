@@ -217,13 +217,9 @@ export async function POST(request: NextRequest) {
 
     let departmentDisplay: string | null = null;
     if (contact?.department) {
-      const dept = await prisma.department.findFirst({ where: { name: contact.department } });
-      if (dept?.parentId) {
-        const parent = await prisma.department.findUnique({ where: { id: dept.parentId } });
-        departmentDisplay = parent ? `${parent.name} > ${dept.name}` : dept.name;
-      } else {
-        departmentDisplay = dept?.name ?? contact.department;
-      }
+      const allDepts = await prisma.department.findMany({ select: { id: true, name: true, parentId: true } });
+      const { getDepartmentDisplayLabel } = await import("@/lib/department-display");
+      departmentDisplay = getDepartmentDisplayLabel(contact.department, allDepts, normalizedSido);
     }
 
     return NextResponse.json({
