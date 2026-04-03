@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { SIDO_LIST, SIGUNGU_MAP } from "@/data/korea-regions";
+import { shortenDeptDisplayName } from "@/lib/dept-name-shorten";
 
 interface Contact {
   id: number;
@@ -80,9 +81,11 @@ export default function ContactTable({ initial, initialDepartments }: { initial:
   const getDeptDisplay = (deptName: string | null) => {
     if (!deptName) return "-";
     const dept = departments.find((d) => d.name === deptName);
-    if (!dept || !dept.parentId) return deptName;
+    if (!dept || !dept.parentId) return shortenDeptDisplayName(deptName);
     const parent = departments.find((d) => d.id === dept.parentId);
-    return parent ? `${parent.name} > ${deptName}` : deptName;
+    return parent
+      ? `${shortenDeptDisplayName(parent.name)} > ${shortenDeptDisplayName(deptName)}`
+      : shortenDeptDisplayName(deptName);
   };
 
   const addDepartment = async () => {
