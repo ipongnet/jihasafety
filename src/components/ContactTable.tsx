@@ -75,6 +75,7 @@ export default function ContactTable({ initial, initialDepartments }: { initial:
   const [newDeptName, setNewDeptName] = useState("");
   const [newDeptParentId, setNewDeptParentId] = useState<number | null>(null);
   const [deptError, setDeptError] = useState("");
+  const [bulkAdding, setBulkAdding] = useState(false);
 
   const getDeptDisplay = (deptName: string | null) => {
     if (!deptName) return "-";
@@ -96,6 +97,24 @@ export default function ContactTable({ initial, initialDepartments }: { initial:
     if (!res.ok) { setDeptError(data.message); return; }
     setDepartments((prev) => [...prev, data]);
     setNewDeptName("");
+  };
+
+  const bulkAddSub = async (subName: string) => {
+    if (!confirm(`모든 L1 부서 하위에 "${subName}"을(를) 추가하시겠습니까?`)) return;
+    setBulkAdding(true);
+    setDeptError("");
+    const res = await fetch("/api/departments/bulk-add-sub", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name: subName }),
+    });
+    const data = await res.json();
+    setBulkAdding(false);
+    if (!res.ok) { setDeptError(data.message); return; }
+    setDepartments(data.departments);
+    if (data.skipped > 0) {
+      setDeptError(`${data.added}개 추가, ${data.skipped}개는 이미 존재하여 건너뜀`);
+    }
   };
 
   const deleteDepartment = async (id: number) => {
@@ -270,7 +289,16 @@ export default function ContactTable({ initial, initialDepartments }: { initial:
             />
             <button onClick={addDepartment} className="bg-gray-700 text-white text-sm px-4 py-1.5 rounded-lg hover:bg-gray-800">추가</button>
           </div>
-          {deptError && <p className="text-red-500 text-xs">{deptError}</p>}
+          <div className="flex gap-2 pt-1">
+            <button
+              onClick={() => bulkAddSub("관로보전부")}
+              disabled={bulkAdding}
+              className="border border-indigo-200 bg-indigo-50 text-indigo-700 text-xs font-medium px-3 py-1.5 rounded-lg hover:bg-indigo-100 disabled:opacity-50 transition-colors"
+            >
+              {bulkAdding ? "추가 중..." : "관로보전부 전체 L1에 일괄 추가"}
+            </button>
+          </div>
+          {deptError && <p className="text-xs mt-1" style={{ color: deptError.includes("건너뜀") ? "#6366f1" : "#ef4444" }}>{deptError}</p>}
         </div>
       )}
 

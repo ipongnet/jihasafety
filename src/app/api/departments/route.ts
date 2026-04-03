@@ -13,12 +13,19 @@ export async function POST(request: NextRequest) {
   if (!name || typeof name !== "string" || !name.trim()) {
     return NextResponse.json({ message: "부서명을 입력해주세요." }, { status: 400 });
   }
-  try {
-    const dept = await prisma.department.create({
-      data: { name: name.trim(), parentId: parentId ?? null },
-    });
-    return NextResponse.json(dept, { status: 201 });
-  } catch {
+  const trimmedName = name.trim();
+  const pid = parentId ?? null;
+
+  // 동일 계층에서 중복 이름 체크
+  const existing = await prisma.department.findFirst({
+    where: { name: trimmedName, parentId: pid },
+  });
+  if (existing) {
     return NextResponse.json({ message: "이미 존재하는 부서명입니다." }, { status: 409 });
   }
+
+  const dept = await prisma.department.create({
+    data: { name: trimmedName, parentId: pid },
+  });
+  return NextResponse.json(dept, { status: 201 });
 }

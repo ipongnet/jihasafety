@@ -24,7 +24,7 @@ model CityContact {
 
 model Department {
   id       Int          @id @default(autoincrement())
-  name     String       @unique
+  name     String
   parentId Int?
   parent   Department?  @relation("DeptTree", fields: [parentId], references: [id])
   children Department[] @relation("DeptTree")
