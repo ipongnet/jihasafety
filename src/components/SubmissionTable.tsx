@@ -2,7 +2,8 @@
 
 import { useState, useEffect, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
-import { getDepartmentDisplayLabel } from "@/lib/department-display";
+import { getDepartmentDisplayLabel, SIDO_TO_L1_KEYWORD } from "@/lib/department-display";
+import { shortenDeptDisplayName } from "@/lib/dept-name-shorten";
 import { formatSubmissionDateTimeLong, formatSubmissionDateTimeShort } from "@/lib/date-format";
 
 interface DepartmentRow {
@@ -68,6 +69,19 @@ export default function SubmissionTable({
   const [submissions, setSubmissions] = useState(initial);
   const [filter, setFilter] = useState<"all" | "sent" | "failed" | "no_contact" | "replied">("all");
   const [search, setSearch] = useState("");
+
+  // L1 지역본부 목록 + 기본값 경기지역본부
+  const l1Depts = departments.filter((d) => !d.parentId);
+  const defaultL1 = l1Depts.find((d) => d.name.includes("경기"))?.id ?? l1Depts[0]?.id ?? 0;
+  const [regionFilter, setRegionFilter] = useState<number | "all">(defaultL1);
+
+  // sido → L1 id 매핑 함수
+  const sidoToL1Id = (sido: string): number | null => {
+    const keyword = SIDO_TO_L1_KEYWORD[sido];
+    if (!keyword) return null;
+    const l1 = l1Depts.find((d) => d.name.includes(keyword));
+    return l1?.id ?? null;
+  };
   const [detail, setDetail] = useState<Submission | null>(null);
   const [assignContactId, setAssignContactId] = useState<string>("");
   const [assigning, setAssigning] = useState(false);
@@ -103,7 +117,12 @@ export default function SubmissionTable({
   const deptLabel = (s: Submission) =>
     getDepartmentDisplayLabel(s.cityContact?.department ?? null, departments, s.sido);
 
-  const filtered = submissions.filter((s) => {
+  // 지역본부 필터 적용
+  const regionFiltered = regionFilter === "all"
+    ? submissions
+    : submissions.filter((s) => sidoToL1Id(s.sido) === regionFilter);
+
+  const filtered = regionFiltered.filter((s) => {
     if (filter !== "all" && s.status !== filter) return false;
     if (search) {
       const q = search.toLowerCase();
@@ -123,11 +142,11 @@ export default function SubmissionTable({
   });
 
   const counts = {
-    all: submissions.length,
-    sent: submissions.filter((s) => s.status === "sent").length,
-    failed: submissions.filter((s) => s.status === "failed").length,
-    no_contact: submissions.filter((s) => s.status === "no_contact").length,
-    replied: submissions.filter((s) => s.status === "replied").length,
+    all: regionFiltered.length,
+    sent: regionFiltered.filter((s) => s.status === "sent").length,
+    failed: regionFiltered.filter((s) => s.status === "failed").length,
+    no_contact: regionFiltered.filter((s) => s.status === "no_contact").length,
+    replied: regionFiltered.filter((s) => s.status === "replied").length,
   };
 
   return (
@@ -141,6 +160,34 @@ export default function SubmissionTable({
           담당자 없음 건 자동 지정 중...
         </div>
       )}
+      {/* 지역본부 필터 */}
+      <div className="flex items-center gap-2">
+        <span className="text-sm font-medium text-gray-600 whitespace-nowrap">지역본부</span>
+        <div className="flex gap-1 flex-wrap">
+          <button
+            type="button"
+            onClick={() => setRegionFilter("all")}
+            className={`px-2.5 py-1 rounded-lg text-xs font-medium transition-colors ${
+              regionFilter === "all" ? "bg-gray-800 text-white" : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+            }`}
+          >
+            전체
+          </button>
+          {l1Depts.map((d) => (
+            <button
+              key={d.id}
+              type="button"
+              onClick={() => setRegionFilter(d.id)}
+              className={`px-2.5 py-1 rounded-lg text-xs font-medium transition-colors ${
+                regionFilter === d.id ? "bg-gray-800 text-white" : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+              }`}
+            >
+              {shortenDeptDisplayName(d.name)}
+            </button>
+          ))}
+        </div>
+      </div>
+
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <div className="flex gap-1">
           {(["all", "sent", "failed", "no_contact", "replied"] as const).map((f) => (

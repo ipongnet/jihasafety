@@ -1,7 +1,7 @@
 import { shortenDeptDisplayName } from "@/lib/dept-name-shorten";
 
 /** sido(정식명칭) → L1 부서명에 포함된 키워드 */
-const SIDO_TO_L1_KEYWORD: Record<string, string> = {
+export const SIDO_TO_L1_KEYWORD: Record<string, string> = {
   서울특별시: "서울",
   부산광역시: "부산",
   대구광역시: "대구",
