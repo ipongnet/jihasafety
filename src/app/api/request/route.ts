@@ -231,6 +231,11 @@ export async function POST(request: NextRequest) {
         department: departmentDisplay,
         phone: contact.phone,
       } : null,
+      _debug: {
+        hasSupabaseUrl: !!process.env.SUPABASE_URL,
+        hasSupabaseKey: !!process.env.SUPABASE_SERVICE_KEY,
+        bucket: process.env.SUPABASE_BUCKET ?? "(unset)",
+      },
     });
   } catch {
     return NextResponse.json(
