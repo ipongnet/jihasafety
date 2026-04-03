@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
-import { buildResponseEmailSubject, buildResponseEmailHTML } from "@/lib/email-template";
-import { sendMail } from "@/lib/mailer";
+import { sendResponseEmail } from "@/lib/send-response-email";
 
 const MAX_PDF_SIZE = 10 * 1024 * 1024; // 10MB
 
@@ -66,29 +65,20 @@ export async function POST(
 
   // 이메일 발송
   const pdfBuffer = Buffer.from(await pdfFile.arrayBuffer());
-  const emailData = {
-    submissionNumber: submission.submissionNumber ?? `#${submission.id}`,
-    projectName: submission.projectName,
-    companyName: submission.companyName,
-    fullAddress: submission.fullAddress,
-    constructionStartDate: submission.constructionStartDate.toISOString().slice(0, 10),
-    constructionEndDate: submission.constructionEndDate.toISOString().slice(0, 10),
-    conflictStatus,
-    responseMessage,
-  };
 
   try {
-    await sendMail({
+    await sendResponseEmail({
       to: submission.submitterEmail,
-      subject: buildResponseEmailSubject(emailData),
-      html: buildResponseEmailHTML(emailData),
-      attachments: [
-        {
-          filename: pdfFile.name,
-          content: pdfBuffer,
-          contentType: "application/pdf",
-        },
-      ],
+      submissionNumber: submission.submissionNumber ?? `#${submission.id}`,
+      projectName: submission.projectName,
+      companyName: submission.companyName,
+      fullAddress: submission.fullAddress,
+      constructionStartDate: submission.constructionStartDate.toISOString().slice(0, 10),
+      constructionEndDate: submission.constructionEndDate.toISOString().slice(0, 10),
+      conflictStatus,
+      responseMessage,
+      pdfBuffer,
+      pdfFilename: pdfFile.name,
     });
 
     // DB 업데이트

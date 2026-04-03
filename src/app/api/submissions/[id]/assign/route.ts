@@ -7,6 +7,7 @@ import { buildEmailSubject, buildEmailHTML } from "@/lib/email-template";
 import { sendMail } from "@/lib/mailer";
 import fs from "fs";
 import path from "path";
+import { uploadFile } from "@/lib/storage-client";
 
 export async function POST(
   request: NextRequest,
@@ -70,6 +71,15 @@ export async function POST(
     fs.mkdirSync(uploadsDir, { recursive: true });
     fs.writeFileSync(path.join(uploadsDir, csvFilename), csvBuffer);
   } catch { /* Vercel 환경 무시 */ }
+
+  // Supabase Storage outbox/ 업로드 (망연계 시뮬레이션) — ASCII 전용 키
+  try {
+    const today = new Date().toISOString().slice(0, 10).replace(/-/g, "");
+    const safeNum = newSubmissionNumber.replace(/[^a-zA-Z0-9\-]/g, "_");
+    await uploadFile(`outbox/${today}_${safeNum}.csv`, csvBuffer, "text/csv");
+  } catch (e) {
+    console.error("[storage] outbox 업로드 실패:", e);
+  }
 
   const attachments = [{
     filename: csvFilename,
