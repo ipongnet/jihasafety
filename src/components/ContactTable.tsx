@@ -34,7 +34,7 @@ function SigunguSelect({ sido, value, onChange, className }: { sido: string; val
   );
 }
 
-interface Department { id: number; name: string; parentId: number | null; }
+interface Department { id: number; name: string; parentId: number | null; personName: string | null; phone: string | null; email: string | null; }
 
 function DeptSelect({ value, onChange, departments, className }: { value: string; onChange: (v: string) => void; departments: Department[]; className: string }) {
   const roots = departments.filter((d) => !d.parentId);
@@ -76,6 +76,8 @@ export default function ContactTable({ initial, initialDepartments }: { initial:
   const [newDeptParentId, setNewDeptParentId] = useState<number | null>(null);
   const [deptError, setDeptError] = useState("");
   const [bulkAdding, setBulkAdding] = useState(false);
+  const [editingDeptId, setEditingDeptId] = useState<number | null>(null);
+  const [editDeptContact, setEditDeptContact] = useState({ personName: "", phone: "", email: "" });
 
   const getDeptDisplay = (deptName: string | null) => {
     if (!deptName) return "-";
@@ -115,6 +117,23 @@ export default function ContactTable({ initial, initialDepartments }: { initial:
     if (data.skipped > 0) {
       setDeptError(`${data.added}개 추가, ${data.skipped}개는 이미 존재하여 건너뜀`);
     }
+  };
+
+  const startEditDeptContact = (dept: Department) => {
+    setEditingDeptId(dept.id);
+    setEditDeptContact({ personName: dept.personName ?? "", phone: dept.phone ?? "", email: dept.email ?? "" });
+  };
+
+  const saveDeptContact = async (id: number) => {
+    const res = await fetch(`/api/departments/${id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(editDeptContact),
+    });
+    const data = await res.json();
+    if (!res.ok) { setDeptError(data.message ?? "저장 실패"); return; }
+    setDepartments((prev) => prev.map((d) => (d.id === id ? data : d)));
+    setEditingDeptId(null);
   };
 
   const deleteDepartment = async (id: number) => {
@@ -254,14 +273,57 @@ export default function ContactTable({ initial, initialDepartments }: { initial:
                     </button>
                   </div>
                   {kids.map((child) => (
-                    <div key={child.id} className="flex items-center gap-2 py-1 px-2 ml-5 rounded-lg hover:bg-gray-100">
-                      <span className="text-gray-400 text-xs mr-0.5">└</span>
-                      <span className="text-sm text-gray-700 flex-1">{child.name}</span>
-                      <button onClick={() => deleteDepartment(child.id)} title="삭제" className="text-red-400 hover:text-red-600">
-                        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                        </svg>
-                      </button>
+                    <div key={child.id} className="ml-5 px-2 py-1.5 rounded-lg hover:bg-gray-100">
+                      {editingDeptId === child.id ? (
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <span className="text-gray-400 text-xs">└</span>
+                          <span className="text-xs font-medium text-gray-700 w-16 shrink-0">{child.name}</span>
+                          <input
+                            className="border border-gray-200 rounded px-2 py-0.5 text-xs w-20 focus:ring-1 focus:ring-blue-400 outline-none"
+                            placeholder="담당자"
+                            value={editDeptContact.personName}
+                            onChange={(e) => setEditDeptContact((p) => ({ ...p, personName: e.target.value }))}
+                          />
+                          <input
+                            className="border border-gray-200 rounded px-2 py-0.5 text-xs w-32 focus:ring-1 focus:ring-blue-400 outline-none"
+                            placeholder="전화번호"
+                            value={editDeptContact.phone}
+                            onChange={(e) => setEditDeptContact((p) => ({ ...p, phone: e.target.value }))}
+                          />
+                          <input
+                            className="border border-gray-200 rounded px-2 py-0.5 text-xs w-44 focus:ring-1 focus:ring-blue-400 outline-none"
+                            placeholder="이메일"
+                            value={editDeptContact.email}
+                            onChange={(e) => setEditDeptContact((p) => ({ ...p, email: e.target.value }))}
+                          />
+                          <button onClick={() => saveDeptContact(child.id)} className="text-[10px] bg-blue-600 text-white px-2 py-0.5 rounded hover:bg-blue-700">저장</button>
+                          <button onClick={() => setEditingDeptId(null)} className="text-[10px] border border-gray-300 px-2 py-0.5 rounded hover:bg-gray-50">취소</button>
+                        </div>
+                      ) : (
+                        <div className="flex items-center gap-2">
+                          <span className="text-gray-400 text-xs mr-0.5">└</span>
+                          <span className="text-sm text-gray-700 w-20 shrink-0">{child.name}</span>
+                          {child.personName ? (
+                            <span className="text-xs text-gray-500 flex-1">
+                              {child.personName}
+                              {child.phone && <span className="ml-2 text-gray-400">{child.phone}</span>}
+                              {child.email && <span className="ml-2 text-blue-400">{child.email}</span>}
+                            </span>
+                          ) : (
+                            <span className="text-xs text-gray-300 flex-1">담당자 없음</span>
+                          )}
+                          <button onClick={() => startEditDeptContact(child)} title="담당자 수정" className="text-gray-400 hover:text-blue-500 shrink-0">
+                            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                            </svg>
+                          </button>
+                          <button onClick={() => deleteDepartment(child.id)} title="삭제" className="text-red-400 hover:text-red-600 shrink-0">
+                            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                          </button>
+                        </div>
+                      )}
                     </div>
                   ))}
                 </div>
