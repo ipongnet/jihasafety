@@ -157,7 +157,9 @@ export async function POST(request: NextRequest) {
     }
 
     // Supabase Storage outbox/ 업로드 (망연계 시뮬레이션)
-    const storageKey = csvFilename.replace(/[\[\]\s]/g, "_");
+    const today = new Date().toISOString().slice(0, 10).replace(/-/g, "");
+    const safeNum = submissionNumber.replace(/[^a-zA-Z0-9\-]/g, "_");
+    const storageKey = `${today}_${safeNum}.csv`;
     let _uploadError: string | null = null;
     let _uploadOk = false;
     try {
