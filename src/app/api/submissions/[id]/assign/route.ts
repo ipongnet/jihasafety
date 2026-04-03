@@ -45,7 +45,7 @@ export async function POST(
   }
 
   // 접수번호 재생성 (해당 부서 기준 순차)
-  const newSubmissionNumber = await generateSubmissionNumber(contact.department);
+  const newSubmissionNumber = await generateSubmissionNumber(contact.department, submission.sido);
 
   // CSV 재생성
   const replyEmail = process.env.GMAIL_USER ?? "";

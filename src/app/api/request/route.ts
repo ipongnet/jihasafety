@@ -99,7 +99,7 @@ export async function POST(request: NextRequest) {
     // 담당자 매칭 + 접수번호 생성
     const normalizedSido = normalizeSido(sido);
     const contact = await findContact(sido, sigungu);
-    const submissionNumber = await generateSubmissionNumber(contact?.department);
+    const submissionNumber = await generateSubmissionNumber(contact?.department, normalizedSido);
 
     // DB에 먼저 저장 (submission_id 확보 → CSV에 포함)
     let submissionId: number | undefined;
