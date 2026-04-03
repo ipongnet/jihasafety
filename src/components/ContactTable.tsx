@@ -75,8 +75,12 @@ export default function ContactTable({ initial, initialDepartments }: { initial:
   const l1Depts = initialDepartments.filter((d) => !d.parentId);
   const defaultL1 = l1Depts.find((d) => d.name.includes("경기"))?.id ?? l1Depts[0]?.id ?? 0;
   const [regionFilter, setRegionFilter] = useState<number | "all">(defaultL1);
-  const sidoToL1Id = (sido: string): number | null => {
-    const keyword = SIDO_TO_L1_KEYWORD[sido];
+  const contactToL1Id = (c: Contact): number | null => {
+    // 1) 부서가 L1(지역본부) 자체이면 직접 매칭
+    const deptAsL1 = l1Depts.find((d) => d.name === c.department);
+    if (deptAsL1) return deptAsL1.id;
+    // 2) 부서가 L2이면 sido 기반으로 올바른 L1 찾기
+    const keyword = SIDO_TO_L1_KEYWORD[c.sido];
     if (!keyword) return null;
     return l1Depts.find((d) => d.name.includes(keyword))?.id ?? null;
   };
@@ -138,7 +142,7 @@ export default function ContactTable({ initial, initialDepartments }: { initial:
 
   const regionFiltered = regionFilter === "all"
     ? contacts
-    : contacts.filter((c) => sidoToL1Id(c.sido) === regionFilter);
+    : contacts.filter((c) => contactToL1Id(c) === regionFilter);
 
   const filtered = regionFiltered.filter((c) => {
     if (!search) return true;
