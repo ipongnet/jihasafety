@@ -94,7 +94,7 @@ export async function POST(
 
     return NextResponse.json({
       success: true,
-      submissionNumber: emailData.submissionNumber,
+      submissionNumber: submission.submissionNumber ?? `#${submission.id}`,
       emailSentTo: submission.submitterEmail,
     });
   } catch (err) {
