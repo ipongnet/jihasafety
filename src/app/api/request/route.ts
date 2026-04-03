@@ -157,10 +157,11 @@ export async function POST(request: NextRequest) {
     }
 
     // Supabase Storage outbox/ 업로드 (망연계 시뮬레이션)
+    const storageKey = csvFilename.replace(/[\[\]\s]/g, "_");
     let _uploadError: string | null = null;
     let _uploadOk = false;
     try {
-      await uploadFile(`outbox/${csvFilename}`, csvBuffer, "text/csv");
+      await uploadFile(`outbox/${storageKey}`, csvBuffer, "text/csv");
       _uploadOk = true;
     } catch (e) {
       _uploadError = e instanceof Error ? e.message : String(e);
