@@ -23,14 +23,11 @@ model CityContact {
 }
 
 model Department {
-  id         Int          @id @default(autoincrement())
-  name       String
-  parentId   Int?
-  personName String?
-  phone      String?
-  email      String?
-  parent     Department?  @relation("DeptTree", fields: [parentId], references: [id])
-  children   Department[] @relation("DeptTree")
+  id       Int          @id @default(autoincrement())
+  name     String
+  parentId Int?
+  parent   Department?  @relation("DeptTree", fields: [parentId], references: [id])
+  children Department[] @relation("DeptTree")
 }
 
 model Submission {
