@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, type ReactNode } from "react";
+import { useRouter } from "next/navigation";
 import { getDepartmentDisplayLabel } from "@/lib/department-display";
 import { formatSubmissionDateTimeLong, formatSubmissionDateTimeShort } from "@/lib/date-format";
 
@@ -63,6 +64,7 @@ export default function SubmissionTable({
   departments: DepartmentRow[];
   contacts: ContactRow[];
 }) {
+  const router = useRouter();
   const [submissions, setSubmissions] = useState(initial);
   const [filter, setFilter] = useState<"all" | "sent" | "failed" | "no_contact" | "replied">("all");
   const [search, setSearch] = useState("");
@@ -80,10 +82,8 @@ export default function SubmissionTable({
       .then((r) => r.json())
       .then((data) => {
         if (data.updated?.length > 0) {
-          setSubmissions((prev) => {
-            const map = new Map(data.updated.map((u: Submission) => [u.id, u]));
-            return prev.map((s) => (map.has(s.id) ? (map.get(s.id) as Submission) : s));
-          });
+          // 서버에서 cityContact JOIN 포함 최신 데이터를 재조회
+          router.refresh();
         }
       })
       .catch(() => {/* 무시 */})
