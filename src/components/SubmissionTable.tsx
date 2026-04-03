@@ -168,28 +168,18 @@ export default function SubmissionTable({
         />
       </div>
 
-      <div className="rounded-xl border border-gray-200 overflow-hidden">
-        <table className="w-full table-fixed text-xs sm:text-sm border-collapse">
-          <colgroup>
-            <col className="w-[13%]" />
-            <col className="w-[11%]" />
-            <col className="w-[13%]" />
-            <col className="w-[9%]" />
-            <col className="w-[15%]" />
-            <col className="w-[20%]" />
-            <col className="w-[10%]" />
-            <col className="w-[9%]" />
-          </colgroup>
+      <div className="rounded-xl border border-gray-200 overflow-x-auto">
+        <table className="w-full text-xs sm:text-sm border-collapse">
           <thead className="bg-gray-50 text-gray-600 text-[10px] sm:text-xs uppercase tracking-wide">
             <tr>
-              <th className="px-1.5 sm:px-2 py-2 text-center font-semibold">접수번호</th>
-              <th className="px-1.5 sm:px-2 py-2 text-center font-semibold">접수일시</th>
-              <th className="px-1.5 sm:px-2 py-2 text-center font-semibold">담당부서</th>
-              <th className="px-1.5 sm:px-2 py-2 text-center font-semibold">담당자 이름</th>
-              <th className="px-1.5 sm:px-2 py-2 text-center font-semibold">공사명</th>
-              <th className="px-1.5 sm:px-2 py-2 text-center font-semibold">공사위치</th>
-              <th className="px-1.5 sm:px-2 py-2 text-center font-semibold">상태</th>
-              <th className="px-1.5 sm:px-2 py-2 text-center font-semibold">저촉유무</th>
+              <th className="px-2 sm:px-3 py-2 text-center font-semibold whitespace-nowrap">접수번호</th>
+              <th className="px-2 sm:px-3 py-2 text-center font-semibold whitespace-nowrap">접수일시</th>
+              <th className="px-2 sm:px-3 py-2 text-center font-semibold whitespace-nowrap">담당부서</th>
+              <th className="px-2 sm:px-3 py-2 text-center font-semibold whitespace-nowrap">담당자</th>
+              <th className="px-2 sm:px-3 py-2 text-center font-semibold whitespace-nowrap">공사명</th>
+              <th className="px-2 sm:px-3 py-2 text-center font-semibold whitespace-nowrap">공사위치</th>
+              <th className="px-2 sm:px-3 py-2 text-center font-semibold whitespace-nowrap">상태</th>
+              <th className="px-2 sm:px-3 py-2 text-center font-semibold whitespace-nowrap">저촉유무</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-100">
@@ -203,8 +193,7 @@ export default function SubmissionTable({
               filtered.map((s) => {
                 const st = STATUS_LABEL[s.status] ?? { label: s.status, cls: "bg-gray-100 text-gray-600" };
                 const createdAt = formatSubmissionDateTimeShort(s.createdAt);
-                const cell =
-                  "px-1.5 sm:px-2 py-2 align-middle min-w-0 text-center";
+                const cell = "px-2 sm:px-3 py-2 align-middle text-center";
                 const dpt = deptLabel(s);
                 return (
                   <tr key={s.id} className="hover:bg-gray-50">
@@ -212,53 +201,28 @@ export default function SubmissionTable({
                       <button
                         type="button"
                         onClick={() => { setDetail(s); setAssignContactId(""); }}
-                        className="w-full text-center font-mono text-[10px] sm:text-xs text-blue-600 hover:text-blue-800 hover:underline truncate block"
+                        className="font-mono text-[10px] sm:text-xs text-blue-600 hover:text-blue-800 hover:underline whitespace-nowrap"
                         title="상세 보기"
                       >
                         {s.submissionNumber ?? "-"}
                       </button>
                     </td>
                     <td className={`${cell} text-gray-500 whitespace-nowrap tabular-nums`}>{createdAt}</td>
-                    <td className={`${cell} text-gray-700`} title={dpt !== "-" ? dpt : undefined}>
-                      <div className="flex justify-center min-w-0">
-                        <span className="truncate max-w-full">{dpt}</span>
-                      </div>
+                    <td className={`${cell} text-gray-700`}>{dpt}</td>
+                    <td className={`${cell} ${s.cityContact?.personName ? "text-gray-800" : "text-gray-400"}`}>
+                      {s.cityContact?.personName ?? "-"}
                     </td>
-                    <td
-                      className={cell}
-                      title={s.cityContact?.personName ?? undefined}
-                    >
-                      <div className="flex justify-center min-w-0">
-                        <span
-                          className={`truncate max-w-full ${s.cityContact?.personName ? "text-gray-800" : "text-gray-400"}`}
-                        >
-                          {s.cityContact?.personName ?? "-"}
-                        </span>
-                      </div>
-                    </td>
-                    <td className={cell} title={s.projectName}>
-                      <div className="flex justify-center min-w-0">
-                        <span className="truncate max-w-full font-medium text-gray-900">{s.projectName}</span>
-                      </div>
-                    </td>
-                    <td className={cell} title={s.fullAddress}>
-                      <div className="flex justify-center min-w-0">
-                        <span className="truncate max-w-full text-gray-600">{s.fullAddress}</span>
-                      </div>
-                    </td>
+                    <td className={`${cell} font-medium text-gray-900`}>{s.projectName}</td>
+                    <td className={`${cell} text-gray-600`}>{s.fullAddress}</td>
                     <td className={cell}>
-                      <div className="flex justify-center min-w-0">
-                        <span
-                          className={`inline-flex max-w-full px-1 sm:px-1.5 py-0.5 rounded-full text-[10px] sm:text-xs font-medium truncate ${st.cls}`}
-                        >
-                          {st.label}
-                        </span>
-                      </div>
+                      <span className={`inline-flex px-1.5 py-0.5 rounded-full text-[10px] sm:text-xs font-medium whitespace-nowrap ${st.cls}`}>
+                        {st.label}
+                      </span>
                     </td>
                     <td className={cell}>
                       {s.conflictStatus ? (
                         <span
-                          className={`inline-flex px-1 sm:px-1.5 py-0.5 rounded-full text-[10px] sm:text-xs font-medium ${
+                          className={`inline-flex px-1.5 py-0.5 rounded-full text-[10px] sm:text-xs font-medium ${
                             s.conflictStatus === "저촉"
                               ? "bg-red-100 text-red-700"
                               : "bg-green-100 text-green-700"
