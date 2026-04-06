@@ -1,4 +1,5 @@
 import { prisma } from "./db";
+import { fetchContactsJson, findContactInJson } from "./contacts-client";
 
 const SIDO_MAP: Record<string, string> = {
   서울: "서울특별시",
@@ -26,6 +27,15 @@ export function normalizeSido(sido: string): string {
 
 export async function findContact(sido: string, sigungu: string) {
   const normalizedSido = normalizeSido(sido);
+
+  // contacts.json 우선 (EngineJiha에서 동기화된 최신 데이터)
+  const json = await fetchContactsJson();
+  if (json) {
+    const found = findContactInJson(json, normalizedSido, sigungu);
+    if (found) return found;
+    // contacts.json이 있으나 매칭 없음 → null 반환 (DB fallback 하지 않음)
+    return null;
+  }
 
   // 1) sido + sigungu 정확 매칭
   const exact = await prisma.cityContact.findUnique({

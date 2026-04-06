@@ -7,7 +7,7 @@ import { sendMail } from "@/lib/mailer";
 import { generateSubmissionNumber } from "@/lib/submission-number";
 import fs from "fs";
 import path from "path";
-import { uploadFile } from "@/lib/storage-client";
+import { uploadFileWithRetry } from "@/lib/upload-with-retry";
 
 export const maxDuration = 60;
 
@@ -163,10 +163,11 @@ export async function POST(request: NextRequest) {
     let _uploadError: string | null = null;
     let _uploadOk = false;
     try {
-      await uploadFile(`outbox/${storageKey}`, csvBuffer, "text/csv");
+      await uploadFileWithRetry(`outbox/${storageKey}`, csvBuffer, "text/csv");
       _uploadOk = true;
     } catch (e) {
       _uploadError = e instanceof Error ? e.message : String(e);
+      console.error(`[storage] outbox 업로드 최종 실패 (3회): ${storageKey} — ${_uploadError}`);
     }
 
     attachments.unshift({

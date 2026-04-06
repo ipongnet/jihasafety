@@ -40,6 +40,8 @@ interface Submission {
   conflictStatus: string | null;
   responseMessage: string | null;
   respondedAt: string | null;
+  isOverridden: boolean;
+  overrideReason: string | null;
   createdAt: string;
   cityContact: {
     personName: string;
@@ -289,13 +291,16 @@ export default function SubmissionTable({
                           className={`inline-flex px-1.5 py-0.5 rounded-full text-[10px] sm:text-xs font-medium ${
                             s.conflictStatus === "저촉"
                               ? "bg-red-100 text-red-700"
+                              : s.isOverridden
+                              ? "bg-yellow-100 text-yellow-700"
                               : "bg-green-100 text-green-700"
                           }`}
                         >
-                          {s.conflictStatus}
+                          {s.isOverridden ? "🟡 " : s.conflictStatus === "저촉" ? "🔴 " : "🟢 "}
+                          {s.conflictStatus}{s.isOverridden ? "(변경)" : ""}
                         </span>
                       ) : (
-                        <span className="text-gray-300">-</span>
+                        <span className="text-gray-300">⚪ -</span>
                       )}
                     </td>
                   </tr>
@@ -369,9 +374,17 @@ export default function SubmissionTable({
                   ...(d.status === "replied" ? [
                     ["저촉유무", d.conflictStatus ? (
                       <span key="cs" className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium ${
-                        d.conflictStatus === "저촉" ? "bg-red-100 text-red-700" : "bg-green-100 text-green-700"
-                      }`}>{d.conflictStatus}</span>
-                    ) : "-"] as [string, ReactNode],
+                        d.conflictStatus === "저촉" ? "bg-red-100 text-red-700"
+                        : d.isOverridden ? "bg-yellow-100 text-yellow-700"
+                        : "bg-green-100 text-green-700"
+                      }`}>
+                        {d.isOverridden ? "🟡 " : d.conflictStatus === "저촉" ? "🔴 " : "🟢 "}
+                        {d.conflictStatus}{d.isOverridden ? "(변경)" : ""}
+                      </span>
+                    ) : "⚪ -"] as [string, ReactNode],
+                    ...(d.isOverridden && d.overrideReason ? [
+                      ["변경 사유", d.overrideReason] as [string, ReactNode],
+                    ] : []),
                     ["회신 멘트", d.responseMessage ?? "-"] as [string, ReactNode],
                     ["회신일시", d.respondedAt ? new Date(d.respondedAt).toLocaleString("ko-KR") : "-"] as [string, ReactNode],
                   ] : []),

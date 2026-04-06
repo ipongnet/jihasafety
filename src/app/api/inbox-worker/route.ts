@@ -27,9 +27,11 @@ export async function GET() {
         external_id: number | null;
         conflictStatus: string;
         responseMessage: string;
+        isOverridden?: boolean;
+        overrideReason?: string | null;
       };
 
-      const { external_id, conflictStatus, responseMessage, submission_code } = payload;
+      const { external_id, conflictStatus, responseMessage, submission_code, isOverridden, overrideReason } = payload;
       if (!external_id) {
         results.push({ filename: f.name, status: "skipped", detail: "external_id 없음" });
         continue;
@@ -77,6 +79,8 @@ export async function GET() {
           conflictStatus,
           responseMessage,
           respondedAt: new Date(),
+          isOverridden: isOverridden ?? false,
+          overrideReason: overrideReason ?? null,
         },
       });
 

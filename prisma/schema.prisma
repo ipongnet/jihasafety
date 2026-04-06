@@ -49,6 +49,8 @@ model Submission {
   conflictStatus        String?
   responseMessage       String?
   respondedAt           DateTime?
+  isOverridden          Boolean  @default(false)
+  overrideReason        String?
   constructionRoute     String?
   cityContactId         Int?
   cityContact           CityContact? @relation(fields: [cityContactId], references: [id])

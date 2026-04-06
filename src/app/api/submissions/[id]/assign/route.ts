@@ -7,7 +7,7 @@ import { buildEmailSubject, buildEmailHTML } from "@/lib/email-template";
 import { sendMail } from "@/lib/mailer";
 import fs from "fs";
 import path from "path";
-import { uploadFile } from "@/lib/storage-client";
+import { uploadFileWithRetry } from "@/lib/upload-with-retry";
 
 export async function POST(
   request: NextRequest,
@@ -76,7 +76,7 @@ export async function POST(
   try {
     const today = new Date().toISOString().slice(0, 10).replace(/-/g, "");
     const safeNum = newSubmissionNumber.replace(/[^a-zA-Z0-9\-]/g, "_");
-    await uploadFile(`outbox/${today}_${safeNum}.csv`, csvBuffer, "text/csv");
+    await uploadFileWithRetry(`outbox/${today}_${safeNum}.csv`, csvBuffer, "text/csv");
   } catch (e) {
     console.error("[storage] outbox 업로드 실패:", e);
   }
