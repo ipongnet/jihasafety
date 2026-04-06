@@ -33,6 +33,9 @@ export default function Header() {
             <Link href="/contacts" className="text-sm text-gray-600 hover:text-blue-600 transition-colors">
               담당자 현황
             </Link>
+            <Link href="/lookup" className="text-sm text-gray-600 hover:text-blue-600 transition-colors">
+              접수조회
+            </Link>
           </nav>
 
           {/* 모바일 햄버거 */}
@@ -59,6 +62,7 @@ export default function Header() {
             <Link href="/" className="block text-sm text-gray-600 hover:text-blue-600 py-1" onClick={() => setMenuOpen(false)}>홈</Link>
             <Link href="/" className="block text-sm text-gray-600 hover:text-blue-600 py-1" onClick={() => setMenuOpen(false)}>접수하기</Link>
             <Link href="/contacts" className="block text-sm text-gray-600 hover:text-blue-600 py-1" onClick={() => setMenuOpen(false)}>담당자 현황</Link>
+            <Link href="/lookup" className="block text-sm text-gray-600 hover:text-blue-600 py-1" onClick={() => setMenuOpen(false)}>접수조회</Link>
           </div>
         )}
       </div>

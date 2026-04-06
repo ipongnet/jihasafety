@@ -52,6 +52,7 @@ model Submission {
   isOverridden          Boolean  @default(false)
   overrideReason        String?
   constructionRoute     String?
+  pdfStoragePath        String?
   cityContactId         Int?
   cityContact           CityContact? @relation(fields: [cityContactId], references: [id])
   createdAt             DateTime     @default(now())

@@ -88,6 +88,8 @@ export async function GET(request: NextRequest) {
         pdfFilename: `${submission_code}_결과.pdf`,
       });
 
+      const archivePdfPath = `archive/${f.name.replace("_result.json", "_result.pdf")}`;
+
       // DB 업데이트
       await prisma.submission.update({
         where: { id: external_id },
@@ -98,12 +100,13 @@ export async function GET(request: NextRequest) {
           respondedAt: new Date(),
           isOverridden: isOverridden ?? false,
           overrideReason: overrideReason ?? null,
+          pdfStoragePath: archivePdfPath,
         },
       });
 
       // archive/ 이동
       await moveFile(jsonPath, `archive/${f.name}`);
-      await moveFile(pdfPath, `archive/${f.name.replace("_result.json", "_result.pdf")}`);
+      await moveFile(pdfPath, archivePdfPath);
 
       results.push({ filename: f.name, status: "replied" });
     } catch (e) {
