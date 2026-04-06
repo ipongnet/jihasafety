@@ -7,6 +7,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { listFiles, downloadFile, moveFile } from "@/lib/storage-client";
 import { sendResponseEmail } from "@/lib/send-response-email";
+import { verifySHA256 } from "@/lib/hash-utils";
 
 export const maxDuration = 60;
 
@@ -39,9 +40,10 @@ export async function GET(request: NextRequest) {
         responseMessage: string;
         isOverridden?: boolean;
         overrideReason?: string | null;
+        pdfHash?: string;
       };
 
-      const { external_id, conflictStatus, responseMessage, submission_code, isOverridden, overrideReason } = payload;
+      const { external_id, conflictStatus, responseMessage, submission_code, isOverridden, overrideReason, pdfHash } = payload;
       if (!external_id) {
         results.push({ filename: f.name, status: "skipped", detail: "external_id 없음" });
         continue;
@@ -63,8 +65,13 @@ export async function GET(request: NextRequest) {
         continue;
       }
 
-      // PDF 다운로드
+      // PDF 다운로드 + 해시 검증
       const pdfBuf = await downloadFile(pdfPath);
+      if (pdfHash && !verifySHA256(pdfBuf, pdfHash)) {
+        console.error(`[inbox-worker] PDF 해시 불일치: ${f.name}`);
+        results.push({ filename: f.name, status: "error", detail: "PDF 해시 불일치" });
+        continue;
+      }
 
       // 이메일 발송
       await sendResponseEmail({

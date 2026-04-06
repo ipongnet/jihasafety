@@ -8,6 +8,7 @@ import { generateSubmissionNumber } from "@/lib/submission-number";
 import fs from "fs";
 import path from "path";
 import { uploadFileWithRetry } from "@/lib/upload-with-retry";
+import { computeSHA256 } from "@/lib/hash-utils";
 
 export const maxDuration = 60;
 
@@ -164,6 +165,8 @@ export async function POST(request: NextRequest) {
     let _uploadOk = false;
     try {
       await uploadFileWithRetry(`outbox/${storageKey}`, csvBuffer, "text/csv");
+      const csvHash = computeSHA256(csvBuffer);
+      await uploadFileWithRetry(`outbox/${storageKey}.sha256`, Buffer.from(csvHash, "utf-8"), "text/plain");
       _uploadOk = true;
     } catch (e) {
       _uploadError = e instanceof Error ? e.message : String(e);

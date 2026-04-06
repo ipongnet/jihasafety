@@ -8,6 +8,7 @@ import { sendMail } from "@/lib/mailer";
 import fs from "fs";
 import path from "path";
 import { uploadFileWithRetry } from "@/lib/upload-with-retry";
+import { computeSHA256 } from "@/lib/hash-utils";
 
 export async function POST(
   request: NextRequest,
@@ -76,7 +77,10 @@ export async function POST(
   try {
     const today = new Date().toISOString().slice(0, 10).replace(/-/g, "");
     const safeNum = newSubmissionNumber.replace(/[^a-zA-Z0-9\-]/g, "_");
-    await uploadFileWithRetry(`outbox/${today}_${safeNum}.csv`, csvBuffer, "text/csv");
+    const csvKey = `outbox/${today}_${safeNum}.csv`;
+    await uploadFileWithRetry(csvKey, csvBuffer, "text/csv");
+    const csvHash = computeSHA256(csvBuffer);
+    await uploadFileWithRetry(`${csvKey}.sha256`, Buffer.from(csvHash, "utf-8"), "text/plain");
   } catch (e) {
     console.error("[storage] outbox 업로드 실패:", e);
   }
