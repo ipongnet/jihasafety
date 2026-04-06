@@ -217,7 +217,7 @@ export default function SubmissionTable({
               onClick={() => setFilter(f)}
               className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
                 filter === f
-                  ? "bg-blue-600 text-white"
+                  ? "bg-[#1a237e] text-white"
                   : "bg-gray-100 text-gray-600 hover:bg-gray-200"
               }`}
             >
@@ -231,7 +231,7 @@ export default function SubmissionTable({
           placeholder="접수번호, 공사명, 주소, 담당자·부서 검색"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="border border-gray-200 rounded-lg px-4 py-2 text-sm w-full max-w-xs sm:max-w-md focus:ring-2 focus:ring-blue-400 outline-none"
+          className="border border-gray-200 rounded-lg px-4 py-2 text-sm w-full max-w-xs sm:max-w-md focus:ring-2 focus:ring-[#1a237e] outline-none"
         />
       </div>
 
@@ -268,7 +268,7 @@ export default function SubmissionTable({
                       <button
                         type="button"
                         onClick={() => { setDetail(s); setAssignContactId(""); }}
-                        className="font-mono text-[10px] sm:text-xs text-blue-600 hover:text-blue-800 hover:underline whitespace-nowrap"
+                        className="font-mono text-[10px] sm:text-xs text-[#1a237e] hover:text-[#1565c0] hover:underline whitespace-nowrap"
                         title="상세 보기"
                       >
                         {s.submissionNumber ?? "-"}
@@ -406,7 +406,7 @@ export default function SubmissionTable({
                         <select
                           value={assignContactId}
                           onChange={(e) => setAssignContactId(e.target.value)}
-                          className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none bg-white"
+                          className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[#1a237e] outline-none bg-white"
                         >
                           <option value="">-- 담당자를 선택하세요 --</option>
                           {contacts.map((c) => (
@@ -441,7 +441,7 @@ export default function SubmissionTable({
                               setAssigning(false);
                             }
                           }}
-                          className="w-full bg-blue-600 text-white font-medium py-2 rounded-lg hover:bg-blue-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed text-sm"
+                          className="w-full bg-[#1a237e] text-white font-medium py-2 rounded-lg hover:bg-[#1565c0] transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed text-sm"
                         >
                           {assigning ? "처리 중..." : "담당자 지정 및 이메일 발송"}
                         </button>

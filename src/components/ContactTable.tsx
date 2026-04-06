@@ -227,12 +227,12 @@ export default function ContactTable({ initial, initialDepartments }: { initial:
     }
   };
 
-  const inputCls = "border border-gray-200 rounded px-2 py-1 text-sm w-full focus:ring-1 focus:ring-blue-400 outline-none";
-  const selectCls = "border border-gray-200 rounded px-2 py-1 text-sm w-full focus:ring-1 focus:ring-blue-400 outline-none bg-white disabled:bg-gray-100 disabled:text-gray-400";
+  const inputCls = "border border-gray-200 rounded px-2 py-1 text-sm w-full focus:ring-1 focus:ring-[#1a237e] outline-none";
+  const selectCls = "border border-gray-200 rounded px-2 py-1 text-sm w-full focus:ring-1 focus:ring-[#1a237e] outline-none bg-white disabled:bg-gray-100 disabled:text-gray-400";
   const inputClsTable =
-    "border border-gray-200 rounded px-2 py-0.5 text-sm w-full text-center focus:ring-1 focus:ring-blue-400 outline-none";
+    "border border-gray-200 rounded px-2 py-0.5 text-sm w-full text-center focus:ring-1 focus:ring-[#1a237e] outline-none";
   const selectClsTable =
-    "border border-gray-200 rounded px-2 py-0.5 text-sm w-full text-center focus:ring-1 focus:ring-blue-400 outline-none bg-white disabled:bg-gray-100 disabled:text-gray-400";
+    "border border-gray-200 rounded px-2 py-0.5 text-sm w-full text-center focus:ring-1 focus:ring-[#1a237e] outline-none bg-white disabled:bg-gray-100 disabled:text-gray-400";
   /** 수정·삭제 전용 (기본 대비 약 80% 크기) */
   const btnRowActionCls =
     "text-[10px] font-medium px-2 py-0.5 rounded-md shadow-sm leading-tight";
@@ -274,7 +274,7 @@ export default function ContactTable({ initial, initialDepartments }: { initial:
           placeholder="지자체, 담당자, 이메일, 부서 검색"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="border border-gray-200 rounded-lg px-4 py-2 text-sm w-72 focus:ring-2 focus:ring-blue-400 outline-none"
+          className="border border-gray-200 rounded-lg px-4 py-2 text-sm w-72 focus:ring-2 focus:ring-[#1a237e] outline-none"
         />
         <div className="flex items-center gap-2">
           <button
@@ -285,7 +285,7 @@ export default function ContactTable({ initial, initialDepartments }: { initial:
           </button>
           <button
             onClick={() => { setShowAdd(true); setError(""); }}
-            className="bg-blue-600 text-white text-sm font-medium px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-1.5"
+            className="bg-[#1a237e] text-white text-sm font-medium px-4 py-2 rounded-lg hover:bg-[#1565c0] transition-colors flex items-center gap-1.5"
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -331,7 +331,7 @@ export default function ContactTable({ initial, initialDepartments }: { initial:
             <select
               value={newDeptParentId ?? ""}
               onChange={(e) => setNewDeptParentId(e.target.value ? Number(e.target.value) : null)}
-              className="border border-gray-200 rounded-lg px-2 py-1.5 text-sm bg-white focus:ring-2 focus:ring-blue-400 outline-none"
+              className="border border-gray-200 rounded-lg px-2 py-1.5 text-sm bg-white focus:ring-2 focus:ring-[#1a237e] outline-none"
             >
               <option value="">L1 (최상위)</option>
               {departments.filter((d) => !d.parentId).map((d) => (
@@ -344,7 +344,7 @@ export default function ContactTable({ initial, initialDepartments }: { initial:
               onChange={(e) => setNewDeptName(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && addDepartment()}
               placeholder="부서명 입력"
-              className="border border-gray-200 rounded-lg px-3 py-1.5 text-sm flex-1 focus:ring-2 focus:ring-blue-400 outline-none"
+              className="border border-gray-200 rounded-lg px-3 py-1.5 text-sm flex-1 focus:ring-2 focus:ring-[#1a237e] outline-none"
             />
             <button onClick={addDepartment} className="bg-gray-700 text-white text-sm px-4 py-1.5 rounded-lg hover:bg-gray-800">추가</button>
           </div>
@@ -380,7 +380,7 @@ export default function ContactTable({ initial, initialDepartments }: { initial:
           <tbody className="divide-y divide-gray-100">
             {/* 추가 행 */}
             {showAdd && (
-              <tr className="bg-blue-50">
+              <tr className="bg-[#e8eaf6]">
                 <td className="px-3 py-1.5 text-center">
                   <SidoSelect value={addForm.sido} onChange={(v) => setAddForm((f) => ({ ...f, sido: v, sigungu: "" }))} className={selectClsTable} />
                 </td>
@@ -425,7 +425,7 @@ export default function ContactTable({ initial, initialDepartments }: { initial:
                                 }));
                                 setNameDropdown(false);
                               }}
-                              className="px-3 py-2 text-sm text-gray-700 hover:bg-blue-50 cursor-pointer flex items-center justify-between gap-2"
+                              className="px-3 py-2 text-sm text-gray-700 hover:bg-[#e8eaf6] cursor-pointer flex items-center justify-between gap-2"
                             >
                               <span className="font-medium">{c.personName}</span>
                               <span className="text-xs text-gray-400 truncate">{c.department ?? ""}</span>
@@ -443,7 +443,7 @@ export default function ContactTable({ initial, initialDepartments }: { initial:
                 </td>
                 <td className="px-3 py-1.5 text-center">
                   <div className="flex items-center justify-center gap-1.5 flex-wrap">
-                    <button type="button" onClick={addContact} disabled={saving} className="text-[10px] font-medium bg-blue-600 text-white px-2 py-0.5 rounded-md hover:bg-blue-700 disabled:opacity-50 shadow-sm leading-tight">저장</button>
+                    <button type="button" onClick={addContact} disabled={saving} className="text-[10px] font-medium bg-[#1a237e] text-white px-2 py-0.5 rounded-md hover:bg-[#1565c0] disabled:opacity-50 shadow-sm leading-tight">저장</button>
                     <button type="button" onClick={() => { setShowAdd(false); setError(""); }} className="text-[10px] font-medium border border-gray-300 bg-white text-gray-700 px-2 py-0.5 rounded-md hover:bg-gray-50 leading-tight">취소</button>
                   </div>
                 </td>
@@ -474,7 +474,7 @@ export default function ContactTable({ initial, initialDepartments }: { initial:
                     </td>
                     <td className="px-3 py-1.5 text-center">
                       <div className="flex items-center justify-center gap-1.5 flex-wrap">
-                        <button type="button" onClick={saveEdit} disabled={saving} className="text-[10px] font-medium bg-blue-600 text-white px-2 py-0.5 rounded-md hover:bg-blue-700 disabled:opacity-50 shadow-sm leading-tight">저장</button>
+                        <button type="button" onClick={saveEdit} disabled={saving} className="text-[10px] font-medium bg-[#1a237e] text-white px-2 py-0.5 rounded-md hover:bg-[#1565c0] disabled:opacity-50 shadow-sm leading-tight">저장</button>
                         <button type="button" onClick={() => setEditingId(null)} className="text-[10px] font-medium border border-gray-300 bg-white text-gray-700 px-2 py-0.5 rounded-md hover:bg-gray-50 leading-tight">취소</button>
                       </div>
                     </td>
@@ -484,7 +484,7 @@ export default function ContactTable({ initial, initialDepartments }: { initial:
                     <td className="px-3 py-2.5 text-center text-gray-700 leading-snug">{c.sido}</td>
                     <td className="px-3 py-2.5 text-center font-medium text-gray-900 leading-snug">{c.sigungu}</td>
                     <td className="px-3 py-2.5 text-center text-gray-700 leading-snug">{c.personName}</td>
-                    <td className="px-3 py-2.5 text-center text-blue-600 leading-snug">{c.email}</td>
+                    <td className="px-3 py-2.5 text-center text-[#1a237e] leading-snug">{c.email}</td>
                     <td className="px-3 py-2.5 text-center text-gray-600 leading-snug">{c.phone}</td>
                     <td className="px-3 py-2.5 text-center text-gray-500 leading-snug">{getDeptDisplay(c.department, c.sido)}</td>
                     <td className="px-3 py-2.5 text-center">
@@ -492,7 +492,7 @@ export default function ContactTable({ initial, initialDepartments }: { initial:
                         <button
                           type="button"
                           onClick={() => startEdit(c)}
-                          className={`${btnRowActionCls} border border-blue-200 bg-white text-blue-700 hover:bg-blue-50 hover:border-blue-300`}
+                          className={`${btnRowActionCls} border border-[#1a237e]/30 bg-white text-[#1a237e] hover:bg-[#e8eaf6] hover:border-[#1a237e]/50`}
                         >
                           수정
                         </button>
