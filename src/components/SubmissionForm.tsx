@@ -18,6 +18,7 @@ export default function SubmissionForm() {
   const [projectName, setProjectName] = useState("");
   const [companyName, setCompanyName] = useState("");
   const [submitterEmail, setSubmitterEmail] = useState("");
+  const [emailConfirm, setEmailConfirm] = useState("");
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
   const [address, setAddress] = useState<AddressData | null>(null);
@@ -219,6 +220,9 @@ export default function SubmissionForm() {
 
     if (!submitterEmail.trim()) newErrors.submitterEmail = "이메일 주소를 입력해주세요.";
     else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(submitterEmail)) newErrors.submitterEmail = "올바른 이메일 형식을 입력해주세요.";
+    else if (emailConfirm.trim() && submitterEmail.trim() !== emailConfirm.trim()) newErrors.submitterEmail = "이메일이 일치하지 않습니다.";
+    if (!emailConfirm.trim()) newErrors.emailConfirm = "이메일을 한 번 더 입력해주세요.";
+    else if (submitterEmail.trim() !== emailConfirm.trim()) newErrors.emailConfirm = "이메일이 일치하지 않습니다.";
 
     if (!startDate) newErrors.constructionStartDate = "공사 시작일을 선택해주세요.";
     if (!endDate) newErrors.constructionEndDate = "공사 종료일을 선택해주세요.";
@@ -271,6 +275,11 @@ export default function SubmissionForm() {
       const res = await fetch("/api/request", { method: "POST", body: formData });
       if (res.ok) {
         const data = await res.json().catch(() => ({}));
+        // 중복 공사기간 경고 시 confirm
+        if (data.overlapWarning) {
+          const proceed = confirm(`⚠️ ${data.overlapWarning}\n\n계속 진행하시겠습니까?`);
+          if (!proceed) { setIsSubmitting(false); return; }
+        }
         sessionStorage.setItem("submissionResult", JSON.stringify({
           submissionNumber: data.submissionNumber ?? null,
           emailSentTo: data.emailSentTo ?? null,
@@ -346,6 +355,23 @@ export default function SubmissionForm() {
           />
           {errors.submitterEmail && (
             <p className="text-red-500 text-xs mt-1">{errors.submitterEmail}</p>
+          )}
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            이메일 주소 확인 <span className="text-red-500">*</span>
+          </label>
+          <input
+            type="email"
+            value={emailConfirm}
+            onChange={(e) => setEmailConfirm(e.target.value)}
+            maxLength={200}
+            placeholder="이메일을 한 번 더 입력해주세요"
+            className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+            onPaste={(e) => e.preventDefault()}
+          />
+          {errors.emailConfirm && (
+            <p className="text-red-500 text-xs mt-1">{errors.emailConfirm}</p>
           )}
         </div>
         <div>

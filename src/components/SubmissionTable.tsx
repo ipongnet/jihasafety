@@ -56,6 +56,7 @@ const STATUS_LABEL: Record<string, { label: string; cls: string }> = {
   failed: { label: "발송 실패", cls: "bg-red-100 text-red-700" },
   no_contact: { label: "담당자 없음", cls: "bg-gray-100 text-gray-600" },
   replied: { label: "회신완료", cls: "bg-blue-100 text-blue-700" },
+  cancelled: { label: "취소됨", cls: "bg-gray-100 text-gray-400 line-through" },
 };
 
 export default function SubmissionTable({
@@ -443,6 +444,28 @@ export default function SubmissionTable({
                           className="w-full bg-blue-600 text-white font-medium py-2 rounded-lg hover:bg-blue-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed text-sm"
                         >
                           {assigning ? "처리 중..." : "담당자 지정 및 이메일 발송"}
+                        </button>
+                      </div>
+                    )}
+                    {d.status !== "replied" && d.status !== "cancelled" && (
+                      <div className="mt-4 pt-4 border-t border-gray-200">
+                        <button
+                          type="button"
+                          onClick={async () => {
+                            if (!confirm("이 접수건을 취소하시겠습니까? 취소 후에는 되돌릴 수 없습니다.")) return;
+                            const res = await fetch(`/api/submissions/${d.id}/cancel`, { method: "POST" });
+                            if (res.ok) {
+                              const updated = { ...d, status: "cancelled" };
+                              setSubmissions(prev => prev.map(s => s.id === d.id ? updated : s));
+                              setDetail(updated);
+                            } else {
+                              const err = await res.json().catch(() => ({}));
+                              alert(err.message || "취소에 실패했습니다.");
+                            }
+                          }}
+                          className="w-full border border-red-200 text-red-600 font-medium py-2 rounded-lg hover:bg-red-50 transition-colors text-sm"
+                        >
+                          접수 취소
                         </button>
                       </div>
                     )}

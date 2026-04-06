@@ -181,3 +181,85 @@ export function buildEmailHTML(data: EmailData): string {
 </body>
 </html>`;
 }
+
+// ── 접수 확인 이메일 (→ 신청자) ──────────────────────────────────────────────
+
+export interface ConfirmEmailData {
+  submissionNumber: string;
+  projectName: string;
+  companyName: string;
+  fullAddress: string;
+  constructionStartDate: string;
+  constructionEndDate: string;
+  contactDepartment: string | null;
+  contactPhone: string | null;
+}
+
+export function buildConfirmEmailSubject(data: ConfirmEmailData): string {
+  return `[접수 완료] ${data.submissionNumber} — ${data.projectName}`;
+}
+
+export function buildConfirmEmailHTML(data: ConfirmEmailData): string {
+  const e = {
+    submissionNumber: escapeHtml(data.submissionNumber),
+    projectName: escapeHtml(data.projectName),
+    companyName: escapeHtml(data.companyName),
+    fullAddress: escapeHtml(data.fullAddress),
+  };
+
+  return `<!DOCTYPE html>
+<html lang="ko">
+<head><meta charset="utf-8"></head>
+<body style="font-family:'Noto Sans KR',sans-serif;margin:0;padding:0;background:#f5f5f5;">
+  <div style="max-width:600px;margin:20px auto;background:#fff;border-radius:8px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,0.1);">
+    <div style="background:#1d4ed8;color:#fff;padding:24px 32px;">
+      <h1 style="margin:0;font-size:20px;">굴착확인 신청 접수 완료</h1>
+    </div>
+    <div style="padding:32px;">
+      <p style="margin:0 0 20px;color:#334155;font-size:15px;">
+        아래 내용으로 굴착확인 신청이 접수되었습니다.<br>
+        <strong>영업일 기준 1~3일 내</strong>에 결과를 회신 드립니다.
+      </p>
+      <div style="background:#eff6ff;border-left:4px solid #2563eb;padding:14px 18px;border-radius:4px;margin-bottom:20px;">
+        <p style="margin:0 0 4px;font-size:12px;font-weight:600;color:#1d4ed8;">접수번호</p>
+        <p style="margin:0;font-size:22px;font-weight:700;color:#1e3a5f;font-family:ui-monospace,monospace;">${e.submissionNumber}</p>
+      </div>
+      <table style="width:100%;border-collapse:collapse;font-size:14px;">
+        <tr>
+          <td style="padding:10px 12px;background:#f8fafc;font-weight:600;width:130px;border-bottom:1px solid #e2e8f0;">공사명</td>
+          <td style="padding:10px 12px;border-bottom:1px solid #e2e8f0;">${e.projectName}</td>
+        </tr>
+        <tr>
+          <td style="padding:10px 12px;background:#f8fafc;font-weight:600;border-bottom:1px solid #e2e8f0;">시공업체</td>
+          <td style="padding:10px 12px;border-bottom:1px solid #e2e8f0;">${e.companyName}</td>
+        </tr>
+        <tr>
+          <td style="padding:10px 12px;background:#f8fafc;font-weight:600;border-bottom:1px solid #e2e8f0;">공사위치</td>
+          <td style="padding:10px 12px;border-bottom:1px solid #e2e8f0;">${e.fullAddress}</td>
+        </tr>
+        <tr>
+          <td style="padding:10px 12px;background:#f8fafc;font-weight:600;border-bottom:1px solid #e2e8f0;">공사예정기간</td>
+          <td style="padding:10px 12px;border-bottom:1px solid #e2e8f0;">${escapeHtml(data.constructionStartDate)} ~ ${escapeHtml(data.constructionEndDate)}</td>
+        </tr>
+        ${data.contactDepartment ? `
+        <tr>
+          <td style="padding:10px 12px;background:#f8fafc;font-weight:600;border-bottom:1px solid #e2e8f0;">담당부서</td>
+          <td style="padding:10px 12px;border-bottom:1px solid #e2e8f0;">${escapeHtml(data.contactDepartment)}</td>
+        </tr>` : ""}
+        ${data.contactPhone ? `
+        <tr>
+          <td style="padding:10px 12px;background:#f8fafc;font-weight:600;border-bottom:1px solid #e2e8f0;">문의 연락처</td>
+          <td style="padding:10px 12px;border-bottom:1px solid #e2e8f0;">${escapeHtml(data.contactPhone)}</td>
+        </tr>` : ""}
+      </table>
+      <div style="margin-top:24px;background:#fefce8;border:1px solid #fde047;border-radius:6px;padding:14px 18px;font-size:13px;color:#713f12;">
+        ⚠️ 회신 이메일이 도착하지 않으면 <strong>스팸 보관함</strong>을 확인해 주세요.
+      </div>
+    </div>
+    <div style="background:#f8fafc;padding:16px 32px;text-align:center;color:#94a3b8;font-size:12px;">
+      지하안전 플랫폼에서 자동 발송된 메일입니다.
+    </div>
+  </div>
+</body>
+</html>`;
+}

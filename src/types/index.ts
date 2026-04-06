@@ -27,6 +27,7 @@ export interface FormErrors {
   projectName?: string;
   companyName?: string;
   submitterEmail?: string;
+  emailConfirm?: string;
   constructionStartDate?: string;
   constructionEndDate?: string;
   address?: string;

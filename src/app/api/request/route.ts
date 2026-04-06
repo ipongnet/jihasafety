@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { findContact, normalizeSido } from "@/lib/city-matcher";
 import { generateAddressCSV, generateCSVFilename } from "@/lib/csv-generator";
-import { buildEmailSubject, buildEmailHTML } from "@/lib/email-template";
+import { buildEmailSubject, buildEmailHTML, buildConfirmEmailSubject, buildConfirmEmailHTML } from "@/lib/email-template";
 import { sendMail } from "@/lib/mailer";
 import { generateSubmissionNumber } from "@/lib/submission-number";
 import fs from "fs";
@@ -95,6 +95,24 @@ export async function POST(request: NextRequest) {
     const totalSize = attachments.reduce((sum, a) => sum + a.content.length, 0);
     if (totalSize > 10 * 1024 * 1024) {
       return NextResponse.json({ success: false, message: "총 파일 크기가 10MB를 초과합니다." }, { status: 400 });
+    }
+
+    // 동일 지역 공사기간 중복 검사 (경고 — 차단하지 않음)
+    let overlapWarning: string | null = null;
+    if (latitude !== null && longitude !== null) {
+      const overlapCount = await prisma.submission.count({
+        where: {
+          sido: normalizeSido(sido ?? ""),
+          sigungu: sigungu ?? "",
+          status: { notIn: ["cancelled"] },
+          constructionStartDate: { lte: endDate },
+          constructionEndDate: { gte: startDate },
+          NOT: { id: undefined },
+        },
+      });
+      if (overlapCount > 0) {
+        overlapWarning = `동일 지역(${sido} ${sigungu})에 공사기간이 겹치는 신청이 ${overlapCount}건 있습니다.`;
+      }
     }
 
     // 담당자 매칭 + 접수번호 생성
@@ -226,11 +244,39 @@ export async function POST(request: NextRequest) {
       departmentDisplay = getDepartmentDisplayLabel(contact.department, allDepts, normalizedSido);
     }
 
+    // 신청자에게 접수 확인 이메일 발송 (비동기, 실패 무시)
+    if (submitterEmail && submissionNumber) {
+      sendMail({
+        to: submitterEmail,
+        subject: buildConfirmEmailSubject({
+          submissionNumber,
+          projectName: projectName ?? "",
+          companyName: companyName ?? "",
+          fullAddress: fullAddress ?? "",
+          constructionStartDate,
+          constructionEndDate,
+          contactDepartment: contact?.department ?? null,
+          contactPhone: contact?.phone ?? null,
+        }),
+        html: buildConfirmEmailHTML({
+          submissionNumber,
+          projectName: projectName ?? "",
+          companyName: companyName ?? "",
+          fullAddress: fullAddress ?? "",
+          constructionStartDate,
+          constructionEndDate,
+          contactDepartment: contact?.department ?? null,
+          contactPhone: contact?.phone ?? null,
+        }),
+      }).catch(() => {});
+    }
+
     return NextResponse.json({
       success: true,
       submissionId,
       submissionNumber,
       emailSentTo,
+      overlapWarning,
       contact: contact ? {
         department: departmentDisplay,
         phone: contact.phone,

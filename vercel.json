@@ -3,6 +3,10 @@
     {
       "path": "/api/inbox-worker",
       "schedule": "*/2 * * * *"
+    },
+    {
+      "path": "/api/cron/construction-alert",
+      "schedule": "0 0 * * *"
     }
   ]
 }
