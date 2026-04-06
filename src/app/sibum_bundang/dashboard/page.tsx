@@ -113,19 +113,19 @@ export default async function DashboardPage({ searchParams }: Props) {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* 헤더 */}
-      <header className="bg-white border-b border-gray-200 sticky top-0 z-10">
+      {/* 헤더 — EngineJiha 남색 통일 */}
+      <header className="bg-[#1a237e] sticky top-0 z-10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-14 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-7 h-7 bg-blue-600 rounded-lg flex items-center justify-center">
+            <div className="w-7 h-7 bg-white/20 rounded-lg flex items-center justify-center">
               <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
               </svg>
             </div>
-            <span className="font-semibold text-gray-900">관리자 페이지</span>
+            <span className="font-semibold text-white">관리자 페이지</span>
           </div>
           <div className="flex items-center gap-3">
-            <Link href="/" className="text-sm text-gray-500 hover:text-gray-700">사이트 보기</Link>
+            <Link href="/" className="text-sm text-blue-200 hover:text-white transition-colors">사이트 보기</Link>
             <LogoutButton />
           </div>
         </div>
@@ -141,7 +141,7 @@ export default async function DashboardPage({ searchParams }: Props) {
             href="/sibum_bundang/dashboard?tab=submissions"
             className={`px-5 py-2.5 text-sm font-medium border-b-2 transition-colors -mb-px ${
               activeTab === "submissions"
-                ? "border-blue-600 text-blue-600"
+                ? "border-[#1a237e] text-[#1a237e]"
                 : "border-transparent text-gray-500 hover:text-gray-700"
             }`}
           >
@@ -151,7 +151,7 @@ export default async function DashboardPage({ searchParams }: Props) {
             href="/sibum_bundang/dashboard?tab=contacts"
             className={`px-5 py-2.5 text-sm font-medium border-b-2 transition-colors -mb-px ${
               activeTab === "contacts"
-                ? "border-blue-600 text-blue-600"
+                ? "border-[#1a237e] text-[#1a237e]"
                 : "border-transparent text-gray-500 hover:text-gray-700"
             }`}
           >

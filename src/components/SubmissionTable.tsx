@@ -291,10 +291,10 @@ export default function SubmissionTable({
                         <span
                           className={`inline-flex px-1.5 py-0.5 rounded-full text-[10px] sm:text-xs font-medium ${
                             s.conflictStatus === "저촉"
-                              ? "bg-red-100 text-red-700"
+                              ? "bg-[#ffebee] text-[#c62828]"
                               : s.isOverridden
-                              ? "bg-yellow-100 text-yellow-700"
-                              : "bg-green-100 text-green-700"
+                              ? "bg-[#fff3e0] text-[#e65100]"
+                              : "bg-[#e8f5e9] text-[#2e7d32]"
                           }`}
                         >
                           {s.isOverridden ? "🟡 " : s.conflictStatus === "저촉" ? "🔴 " : "🟢 "}
@@ -375,9 +375,9 @@ export default function SubmissionTable({
                   ...(d.status === "replied" ? [
                     ["저촉유무", d.conflictStatus ? (
                       <span key="cs" className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium ${
-                        d.conflictStatus === "저촉" ? "bg-red-100 text-red-700"
-                        : d.isOverridden ? "bg-yellow-100 text-yellow-700"
-                        : "bg-green-100 text-green-700"
+                        d.conflictStatus === "저촉" ? "bg-[#ffebee] text-[#c62828]"
+                        : d.isOverridden ? "bg-[#fff3e0] text-[#e65100]"
+                        : "bg-[#e8f5e9] text-[#2e7d32]"
                       }`}>
                         {d.isOverridden ? "🟡 " : d.conflictStatus === "저촉" ? "🔴 " : "🟢 "}
                         {d.conflictStatus}{d.isOverridden ? "(변경)" : ""}
