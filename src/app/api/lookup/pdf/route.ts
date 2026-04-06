@@ -38,7 +38,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "PDF를 불러올 수 없습니다. 잠시 후 다시 시도해 주세요." }, { status: 503 });
   }
 
-  return new NextResponse(pdfBuf, {
+  return new NextResponse(new Uint8Array(pdfBuf), {
     headers: {
       "Content-Type": "application/pdf",
       "Content-Disposition": `attachment; filename="${encodeURIComponent(submission.submissionNumber ?? code)}_결과.pdf"`,

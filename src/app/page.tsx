@@ -11,7 +11,7 @@ export default function Home() {
         <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
           <div className="text-center mb-8">
             <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">
-              지하시설물 굴착공사 유관기관 협의서 접수
+              지하안전 민관공 통합 AI플랫폼
             </h1>
             <p className="text-gray-500 leading-relaxed">
               공사 정보를 입력하면 해당 지역 담당자에게 자동으로 알림이 발송됩니다.

@@ -18,7 +18,7 @@ export default function Header() {
               </svg>
             </div>
             <span className="font-bold text-gray-900 text-sm sm:text-base md:text-lg leading-tight">
-              지하시설물 통합 안전 플랫폼
+              지하안전 민관공 통합 AI플랫폼
             </span>
           </Link>
 
@@ -30,11 +30,11 @@ export default function Header() {
             <Link href="/" className="text-sm text-gray-600 hover:text-blue-600 transition-colors">
               접수하기
             </Link>
-            <Link href="/contacts" className="text-sm text-gray-600 hover:text-blue-600 transition-colors">
-              담당자 현황
-            </Link>
             <Link href="/lookup" className="text-sm text-gray-600 hover:text-blue-600 transition-colors">
               접수조회
+            </Link>
+            <Link href="/contacts" className="text-sm text-gray-600 hover:text-blue-600 transition-colors">
+              담당자 현황
             </Link>
           </nav>
 
@@ -61,8 +61,8 @@ export default function Header() {
           <div className="md:hidden border-t border-gray-100 py-4 space-y-3">
             <Link href="/" className="block text-sm text-gray-600 hover:text-blue-600 py-1" onClick={() => setMenuOpen(false)}>홈</Link>
             <Link href="/" className="block text-sm text-gray-600 hover:text-blue-600 py-1" onClick={() => setMenuOpen(false)}>접수하기</Link>
-            <Link href="/contacts" className="block text-sm text-gray-600 hover:text-blue-600 py-1" onClick={() => setMenuOpen(false)}>담당자 현황</Link>
             <Link href="/lookup" className="block text-sm text-gray-600 hover:text-blue-600 py-1" onClick={() => setMenuOpen(false)}>접수조회</Link>
+            <Link href="/contacts" className="block text-sm text-gray-600 hover:text-blue-600 py-1" onClick={() => setMenuOpen(false)}>담당자 현황</Link>
           </div>
         )}
       </div>

@@ -8,7 +8,7 @@ const notoSansKR = Noto_Sans_KR({
 });
 
 export const metadata: Metadata = {
-  title: "지하시설물 통합 안전 플랫폼",
+  title: "지하안전 민관공 통합 AI플랫폼",
   description: "도로 굴착 공사 전 해당 지역 지하매설물 담당자에게 자동으로 알림을 발송하는 안전 플랫폼입니다.",
 };
 
