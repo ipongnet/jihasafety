@@ -1,15 +1,25 @@
 /**
  * GET /api/inbox-worker
  * Supabase Storage inbox/ 폴링 → 신청자 이메일 발송 → DB 업데이트 → archive/ 이동.
+ * 인증: Vercel Cron (CRON_SECRET) 또는 EngineJiha 핑 (PING_API_KEY) 중 하나.
  */
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { listFiles, downloadFile, moveFile } from "@/lib/storage-client";
 import { sendResponseEmail } from "@/lib/send-response-email";
 
 export const maxDuration = 60;
 
-export async function GET() {
+export async function GET(request: NextRequest) {
+  const cronSecret = process.env.CRON_SECRET;
+  const pingKey = process.env.PING_API_KEY;
+  if (cronSecret || pingKey) {
+    const auth = request.headers.get("Authorization");
+    const validTokens = [cronSecret, pingKey].filter(Boolean).map((t) => `Bearer ${t}`);
+    if (!auth || !validTokens.includes(auth)) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+  }
   const files = await listFiles("inbox/");
   const jsonFiles = files.filter((f) => f.name.endsWith("_result.json"));
 
